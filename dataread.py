@@ -246,6 +246,9 @@ class dataread():
             # print(data.Pro_Data1)
             data.Max = np.max(data.Pro_Data1)
             data.Min = np.min(data.Pro_Data1)
+            if(data.Max==0):
+                self.data.filenames.remove(f)
+                continue
             data.cutendnum1 = len(data.Pro_Data1) - 1
             # 复制原始数据到Cut
             data.Cut_Data1 = copy.deepcopy(data.Pro_Data1)
@@ -1278,6 +1281,9 @@ class dataProcess():
             # print(data.Pro_Data1)
             data.Max = np.max(data.Pro_Data1)
             data.Min = np.min(data.Pro_Data1)
+            if(data.Max==0):
+                self.data.filenames.remove(f)
+                continue
             data.cutendnum1 = len(data.Pro_Data1) - 1
             # 复制原始数据到Cut
             data.Cut_Data1 = copy.deepcopy(data.Pro_Data1)
@@ -1365,6 +1371,7 @@ class dataProcess():
                 y = value.Pro_Data1[starttruenum:endtruenum + 1]
                 Max = np.max(value.Pro_Data1[starttruenum:endtruenum + 1])
                 Min = np.min(value.Pro_Data1[starttruenum:endtruenum + 1])
+                print("value.Pro_Data1",value.Pro_Data1)
                 # print("x:",x)
                 # print("y:",y)
                 # value.Cut_Data1fit_X = np.linspace(value.Pro_Data1_X[starttruenum],value.Pro_Data1_X[endtruenum], 1000).tolist()
@@ -1372,9 +1379,10 @@ class dataProcess():
                 if (funtype == 1):
                     self.sinOuttext.emit("正在进行双曲线拟合 " + str(p) + "/" + str(len(self.data.filenames)) + " " + key)
                     try:
-                        # print("双曲")
-                        # print(b1low[0]*Max,b1low[1],b1low[2],b1low[3])
-                        # print(b1top[0]*Max,b1top[1],b1top[2],b1top[3])
+                        print("双曲")
+                        print(b1low[0]*Max,b1low[1],b1low[2],b1low[3])
+                        print(b1top[0]*Max,b1top[1],b1top[2],b1top[3])
+                        print("Max", Max)
                         popt, pcov = curve_fit(fun1, x, y, maxfev=500000000, bounds=(
                         [b1low[0] * Max, b1low[1], b1low[2], b1low[3]], [b1top[0] * Max, b1top[1], b1top[2], b1top[3]]),
                                                method=method)
@@ -1426,6 +1434,7 @@ class dataProcess():
                         # print(b2top[0]*Max,b2top[1],b2top[2])
                         popt, pcov = curve_fit(fun2, x, y, maxfev=50000000, bounds=(
                         [b2low[0] * Max, b2low[1], b2low[2]], [b2top[0] * Max, b2top[1], b2top[2]]), method=method)
+                        print("Max",Max)
                         yfit = fun2(xfit, popt[0], popt[1], popt[2])
                         ytempfit = fun2(x, popt[0], popt[1], popt[2])
                         R2 = getIndexes(ytempfit, y)
