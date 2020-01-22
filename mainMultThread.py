@@ -18,7 +18,6 @@ sns.set_style("whitegrid")
 # sns.set_style("darkgrid", {"axes.facecolor": "0"})
 from PyQt5 import QtCore
 
-
 class main(QMainWindow):
     def __init__(self, parent=None):
         self.data=datastruct()
