@@ -1,0 +1,20 @@
+[[source]]
+name = "pypi"
+url = "https://mirrors.aliyun.com/pypi/simple"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+matplotlib = "*"
+pyqt5 = "*"
+seaborn = "*"
+xlrd = "*"
+xlwt = "*"
+xlsxwriter = "*"
+xlutils = "*"
+pymysql = "*"
+requests = "*"
+
+[requires]
+python_version = "3.6"
