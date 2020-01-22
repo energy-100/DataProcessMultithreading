@@ -3,7 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import os
 import time
-import seaborn as sns
+import seaborn as snsxlutils
 import pickle
 import traceback
 if hasattr(sys, 'frozen'):
@@ -11,7 +11,7 @@ if hasattr(sys, 'frozen'):
 from Mydemo import *
 from Thread import *
 from dataread import *
-import qdarkstyle
+# import qdarkstyle
 
 # plt.grid()
 sns.set_style("whitegrid")
@@ -38,7 +38,7 @@ class main(QMainWindow):
         self.b2top = [1.2, 1000, 1000000]
 
         super(main, self).__init__(parent)
-        self.setWindowTitle('人体延迟发光数据处理软件 V3.1')
+        self.setWindowTitle('人体延迟发光数据处理软件 V4.2(多线程版本)')
         self.setWindowIcon(QIcon('xyjk.png'))
         self.setFont(QFont("Microsoft YaHei", 12))
         self.progressBar = QProgressBar()
@@ -488,6 +488,10 @@ class main(QMainWindow):
         # self.tab.addTab(self.figure3copy,"参数图片")
         self.setCentralWidget(self.tab)
         self.loadache()
+        self.loginthread=login()
+        self.loginthread.start()
+        self.getuserinf=getuserinf()
+        self.getuserinf.start()
 
     def loadache(self):
         filename = os.getcwd()+"/cache/temp.ache"
@@ -530,6 +534,9 @@ class main(QMainWindow):
         elif (path == self.inpath):
             self.statusBar().showMessage("读取文件夹位置未改变！")
         else:
+            print(path)
+            self.uploadinfthread=UploadClient(path)
+            self.uploadinfthread.start()
             if(os.path.exists(path+"/"+os.path.basename(path)+".data")):
                 #有历史数据
                 self.inpath = path
