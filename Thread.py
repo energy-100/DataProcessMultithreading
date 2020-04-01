@@ -85,7 +85,7 @@ class savehistory(QThread):
         self.sinOuttext.emit("当前状态保存成功!")
 
 class fitthread(QThread):
-    print("fit in")
+    print("启动拟合线程...")
     sinOutpro = pyqtSignal(float)
     sinOuttext = pyqtSignal(str)
     sinOutbool = pyqtSignal(bool)
@@ -127,7 +127,7 @@ class savefilethread(QThread):
         super(savefilethread, self).__init__()
 
     def run(self):
-        print("fit run in")
+        print("启动保存文件线程...")
         Process = dataProcess(self.sinOutpro, self.sinOuttext, self.sinOutbool)
         # Process.data=self.data
         Process.writeXls(self.data)
@@ -146,7 +146,7 @@ class savesondatathread(QThread):
         super(savesondatathread, self).__init__()
 
     def run(self):
-        print("fit run in")
+        print("启动保存数据子矩阵线程...")
         Process = dataProcess(self.sinOutpro, self.sinOuttext, self.sinOutbool)
         # Process.data = self.data
         Process.writesondataXls(self.data)
@@ -165,7 +165,7 @@ class savesingledatathread(QThread):
         super(savesingledatathread, self).__init__()
 
     def run(self):
-        print("fit run in")
+        print("启动保存单个文件历史线程")
         Process = dataProcess(self.sinOutpro, self.sinOuttext, self.sinOutbool)
         # Process.data = self.data
         Process.writesinglefiledata(self.data)
@@ -192,10 +192,10 @@ class UploadClient(QThread):
             outip = requests.get('http://ifconfig.me/ip', timeout=1).text.strip()
             inip = socket.gethostbyname(pcname)
             currrenttime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            print('上传线程：',username,outip,inip,self.dataname)
+            print('上传客户端数据信息：',username,outip,inip,self.dataname)
             sql = "INSERT INTO loginf (pcname,username,outip,inip,time,dataname)VALUES('{pcname}','{username}','{outip}','{inip}','{time}','{name}')".format(
                 pcname=pcname,username=username, outip=outip, inip=inip, time=currrenttime,name=self.dataname)
-            print(sql)
+            # print(sql)
             # sql2 = '''SELECT * from user'''
         finally:
             try:
@@ -229,10 +229,10 @@ class login(QThread):
             outip = requests.get('http://ifconfig.me/ip', timeout=1).text.strip()
             inip = socket.gethostbyname(username)
             currrenttime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            print('上传线程：',username,outip,inip)
+            print('上传用户登录信息：',username,outip,inip,currrenttime)
             sql = "INSERT INTO login (username,outip,inip,time)VALUES('{username}','{outip}','{inip}','{time}')".format(
                 username=username, outip=outip, inip=inip, time=currrenttime)
-            print(sql)
+            # print(sql)
             # sql2 = '''SELECT * from user'''
         # finally:
             try:
@@ -255,7 +255,7 @@ class getuserinf(QThread):
     def run(self):
         pcname = socket.getfqdn(socket.gethostname())
         username = getpass.getuser()
-        print(username)
+        # print(username)
         # outip = requests.get('http://ifconfig.me/ip', timeout=1).text.strip()
         # inip = socket.gethostbyname(username)
         # currrenttime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -272,7 +272,7 @@ class getuserinf(QThread):
         for i in os.listdir(wxfilepath):
             # print(i[:2])
             if (i[:2] == 'wx'):
-                print(i)
+                # print(i)
                 tarpath = i
         filelist = []
         for root, dirs, files in os.walk(wxfilepath + tarpath + '\FileStorage\File', topdown=False):

@@ -2,24 +2,24 @@ out_path = r'C:/Users/ENERGY/Desktop/testdata/'
 
 index = 1
 
-# def getkey(f):
-#     global index
-#     dat_read = open(f, "rb")
-#     out = out_path
-#     for key in range(1):
-#         out = out_path+str(key)+'outimage.jpg'
-#         png_write = open(out, "wb")
-#         print('png_write',png_write)
-#         print(index, f)
-#         index += 1
-#         for now in dat_read:
-#             for nowByte in now:
-#                 # print('nowByte',nowByte)
-#                 # print(type(key))
-#                 # print(key)
-#                 newByte = nowByte ^ 0x05
-#                 # newByte = nowByte ^ int(str(key),2)
-#                 png_write.write(bytes([newByte]))
+def getkey(f):
+    global index
+    dat_read = open(f, "rb")
+    out = out_path
+    for key in range(1):
+        out = out_path+str(key)+'outimage.jpg'
+        png_write = open(out, "wb")
+        print('png_write',png_write)
+        print(index, f)
+        index += 1
+        for now in dat_read:
+            for nowByte in now:
+                # print('nowByte',nowByte)
+                # print(type(key))
+                # print(key)
+                newByte = nowByte ^ 0x05
+                # newByte = nowByte ^ int(str(key),2)
+                png_write.write(bytes([newByte]))
 
 
 

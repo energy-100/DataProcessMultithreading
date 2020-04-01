@@ -3,18 +3,17 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import os
 import time
-import seaborn as snsxlutils
 import pickle
 import traceback
 if hasattr(sys, 'frozen'):
     os.environ['PATH'] = sys._MEIPASS + ";" + os.environ['PATH']
-from Mydemo import *
+from MyWidget import Mydemo,MatplotWidget1
 from Thread import *
 from dataread import *
 # import qdarkstyle
 
 # plt.grid()
-sns.set_style("whitegrid")
+# sns.set_style("whitegrid")
 # sns.set_style("darkgrid", {"axes.facecolor": "0"})
 from PyQt5 import QtCore
 
@@ -485,12 +484,28 @@ class main(QMainWindow):
         # self.tab.addTab(self.figurecopy,"双曲线图片")
         # self.tab.addTab(self.figure2copy,"指数图片")
         # self.tab.addTab(self.figure3copy,"参数图片")
+
+        #增加提取I0模块
+        #————————————————
+        self.exwidget=QWidget()
+        self.exgrid = QGridLayout(self)
+        self.exLineEditin = dragLineEdit(self.statusBar)
+        #exLineEditout = QLineEdit()
+        self.exbutton=QPushButton("选择文件夹")
+        self.exgrid.addWidget(self.exLineEditin,0,0,1,1)
+        self.exgrid.addWidget(self.exbutton,0,1,1,1)
+        self.exwidget.setLayout(self.exgrid)
+        self.tab.addTab(self.exwidget,"批量提取I0")
+        # ————————————————
+
+
+
         self.setCentralWidget(self.tab)
         self.loadache()
-        self.loginthread=login()
-        self.loginthread.start()
-        self.getuserinf=getuserinf()
-        self.getuserinf.start()
+        # self.loginthread=login()
+        # self.loginthread.start()
+        # self.getuserinf=getuserinf()
+        # self.getuserinf.start()
 
     def loadache(self):
         filename = os.getcwd()+"/cache/temp.ache"
@@ -498,11 +513,11 @@ class main(QMainWindow):
             f = open(filename, 'rb')
             filepath = pickle.load(f)
             f.close()
-            print(filepath)
+            # print(filepath)
             if (os.path.exists(filepath)):
                 with open(filepath, "rb") as file:
                     data = pickle.load(file)
-                    print(data)
+                    # print(data)
                 self.updatareadhistory(data)
 
 
@@ -523,7 +538,7 @@ class main(QMainWindow):
 
     def readfileButtonclicked(self):
         self.savedatafileButtonclicked()
-        print("readfileButtonclicked")
+        print("选取数据")
         self.statusBar().showMessage("正在选择文件夹...")
         path = QFileDialog.getExistingDirectory(self, "请选择数据文件的根目录")
         # path = "C:/Users/ENERGY/Desktop/工作文件/test"
@@ -534,8 +549,8 @@ class main(QMainWindow):
             self.statusBar().showMessage("读取文件夹位置未改变！")
         else:
             print(path)
-            self.uploadinfthread=UploadClient(path)
-            self.uploadinfthread.start()
+            # self.uploadinfthread=UploadClient(path)
+            # self.uploadinfthread.start()
             if(os.path.exists(path+"/"+os.path.basename(path)+".data")):
                 #有历史数据
                 self.inpath = path
@@ -874,7 +889,7 @@ class main(QMainWindow):
         self.FigtabWidget.setCurrentIndex(0)
         self.figure.fig.canvas.draw_idle()
         self.figure.axes.clear()
-        plt.grid()
+        # plt.grid()
 
         numstart1 = self.data.filelist[self.Table2V].paras["双曲线拟合"][index].cutstartnum1
         numend1 = self.data.filelist[self.Table2V].paras["双曲线拟合"][index].cutendnum1
@@ -1840,6 +1855,9 @@ class main(QMainWindow):
         print("更新进度条可见")
         self.progressBar.setVisible(isvisible)
         # print("更新进度条可见end")
+
+
+
 class dragLineEdit(QLineEdit):
     def __init__(self, statusBar):
         super(dragLineEdit, self).__init__()
