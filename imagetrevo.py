@@ -17,7 +17,7 @@ def getkey(f):
                 # print('nowByte',nowByte)
                 # print(type(key))
                 # print(key)
-                newByte = nowByte ^ 0x05
+                newByte = nowByte ^ 0x6a
                 # newByte = nowByte ^ int(str(key),2)
                 png_write.write(bytes([newByte]))
 

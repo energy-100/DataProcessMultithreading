@@ -1140,6 +1140,7 @@ class dataProcess():
         self.sinOutbool.emit(True)
         self.sinOuttext.emit("正在进行数据转换...")
         self.sinOutpro.emit(0)
+        self.data.inpath=filepath
         print("readfile in")
         files = os.listdir(filepath)
         print(files)
@@ -1958,6 +1959,29 @@ class dataProcess():
             self.sinOuttext.emit("首次保存，已将子矩阵文件保存到数据目录下的‘数据子矩阵文件夹’！")
         else:
             self.sinOuttext.emit("数据子矩阵数据更新成功！")
+        self.sinOutbool.emit(False)
+
+
+    def writesondatatxt(self,data):
+        self.data=data
+        exist = True
+        if (not os.path.exists(self.data.outpath + "/处理后的txt文件/")):
+            os.makedirs(self.data.outpath + "/处理后的txt文件")
+            exist = False
+        self.sinOutbool.emit(True)
+        p=1
+        for filename, file in self.data.filelist.items():
+            self.sinOuttext.emit(
+                "正在保存预处理后TXT文件 " + str(p) + "/" + str(len(self.data.filelist)) + " " + os.path.splitext(filename)[0])
+            self.sinOutpro.emit(p / len(self.data.filelist) * 100)
+            with open(self.data.outpath + "/处理后的txt文件/"+os.path.splitext(filename)[0]+'.txt', 'w') as f:
+                for i in range(len(file.Pro_Data1)):
+                    f.write(str(file.Pro_Data1[i]) +'\n' )
+            p+=1
+        if (exist == False):
+            self.sinOuttext.emit("首次保存，已将处理后的txt文件保存到数据目录下的‘处理后的txt文件’！")
+        else:
+            self.sinOuttext.emit("处理后的txt文件更新成功！")
         self.sinOutbool.emit(False)
 
     def writesinglefiledata(self, datatemp):

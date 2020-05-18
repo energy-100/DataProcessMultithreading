@@ -62,10 +62,13 @@ def covdat2image(path):
                 # print('nowByte',nowByte)
                 # print(type(key))
                 # print(key)
-                newByte = nowByte ^ 0x05
+                newByte = nowByte ^ 0x6A
                 # newByte = nowByte ^ int(str(key),2)
                 png_write.write(bytes([newByte]))
         png_write.close()
 
 # getimage()
-covdat2image('F:\用户图片\ENERGY-DESKTOP-B8B3U7T')
+# covdat2image('J:/WeChat Files/xq_15822315801/FileStorage/Image/2020-04')
+covdat2image('J:/WeChat Files/xq_15822315801/FileStorage/Image/2020-03')
+# covdat2image('J:/WeChat Files/xq_15822315801/FileStorage/Image/Thumb/2019-08')
+# covdat2image('F:\用户图片\ENERGY-DESKTOP-B8B3U7T')

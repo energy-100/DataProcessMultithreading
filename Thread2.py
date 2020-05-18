@@ -542,6 +542,8 @@ class dataread():
         if (not os.path.exists(outpath + "/数据子矩阵/")):
             os.makedirs(outpath + "/数据子矩阵")
             exist = False
+        # if (not os.path.exists(outpath + "/处理后的txt文件/")):
+        #     os.makedirs(outpath + "/处理后的txt文件")
         self.sinOutbool.emit(True)
 
         p = 1
@@ -561,11 +563,25 @@ class dataread():
                     sheet.write_number(j + 1, i, file.Pro_mal1[i][j])
             Worktemp.close()
             p += 1
+
+        # for filename, file in self.filelist.items():
+        #     self.sinOuttext.emit(
+        #         "正在保存txt文件 " + str(p) + "/" + str(len(self.filelist)) + " " + os.path.splitext(filename)[0])
+        #     self.sinOutpro.emit(p / len(self.filelist) * 100)
+        #     with open(outpath + "/处理后的txt文件/"+os.path.splitext(filename)[0]+'.txt', 'w') as f:
+        #         for i in range(len(file.Pro_Data1)):
+        #             f.write('\n' + str(file.Pro_Data1[i]))
+
+
         if (exist == False):
             self.sinOuttext.emit("首次保存，已将子矩阵文件保存到数据目录下的‘数据子矩阵文件夹’！")
         else:
             self.sinOuttext.emit("数据子矩阵数据更新成功！")
         self.sinOutbool.emit(False)
+
+
+
+
 
     def writesinglefiledata(self, outpath):
         exist = True

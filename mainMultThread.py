@@ -20,6 +20,7 @@ from PyQt5 import QtCore
 class main(QMainWindow):
     def __init__(self, parent=None):
         self.data=datastruct()
+        self.historydata=[]
         self.inpath = ""
         self.outpath = ""
         self.imagen1Name = ''
@@ -53,6 +54,7 @@ class main(QMainWindow):
         self.buttontabgrid = QGridLayout(self)
         self.savetabgrid = QGridLayout(self)
         self.settingtabgrid = QGridLayout(self)
+        self.historydatatabgrid = QGridLayout(self)
 
         self.widget2 = QWidget()
         self.widget2.setLayout(self.buttontabgrid)
@@ -60,12 +62,17 @@ class main(QMainWindow):
         self.widget3.setLayout(self.savetabgrid)
         self.widget4 = QWidget()
         self.widget4.setLayout(self.settingtabgrid)
+        self.widget5 = QWidget()
+        self.widget5.setLayout(self.historydatatabgrid)
 
         self.buttontab.addTab(self.widget2, "操作面板")
         self.buttontab.addTab(self.widget3, "保存到文件")
         self.buttontab.addTab(self.widget4, "高级设置")
+        self.buttontab.addTab(self.widget5, "最近添加")
         self.grid.addWidget(self.buttontab, 2, 0, 2, 3)
 
+
+        # todo： 定义Figure
         self.figure = Mydemo(width=10, height=2, dpi=100)
         self.figure2 = Mydemo(width=10, height=2, dpi=100)
         self.figure3 = Mydemo(width=10, height=2, dpi=100)
@@ -94,6 +101,7 @@ class main(QMainWindow):
         self.FigtabWidget.setMaximumHeight(400)
         self.grid.addWidget(self.FigtabWidget, 0, 3, 4, 12)
 
+        # todo：高级设置
         self.labelshowcut = QLabel("图像显示模式：")
         self.showcutComboBox = QComboBox()
         self.showcutComboBox.addItems(["被裁剪的数据点+拟合数据点", "只显示拟合数据点"])
@@ -274,9 +282,19 @@ class main(QMainWindow):
         self.label2 = QLabel("转换后的列表(按住ctrl选择多列或多行，右键选择复制类型)：")
         self.grid.addWidget(self.label2, 4, 0, 1, 10)
 
+        self.deletedataButton=QPushButton("移除选中数据")
+        self.deletedataButton.clicked.connect(self.deletedataButtonclicked)
+        self.grid.addWidget(self.deletedataButton, 4, 9, 1, 1)
+
+        self.backdataButton = QPushButton("重置当前数据")
+        self.backdataButton.clicked.connect(self.backdataclicked)
+        self.grid.addWidget(self.backdataButton, 4, 8, 1, 1)
+
+
         self.label3 = QLabel("数据子矩阵：")
         # self.grid.addWidget(self.label3, 4, 10, 1, 5)
 
+        # todo：列表定义
         self.Table1 = QListWidget()
 
         self.Table2 = QTableWidget()
@@ -312,6 +330,15 @@ class main(QMainWindow):
         self.Table6.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.Table6.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.Table6.setSelectionBehavior(QAbstractItemView.SelectRows)
+
+
+        self.Table7 = QListWidget()
+        self.Table7.setFont(QFont("Microsoft YaHei", 12))
+        self.Table7.clicked.connect(self.table7clicked)
+        self.historydatatabgrid.addWidget(self.Table7)
+        # self.Table7.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        # self.Table7.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # self.Table7.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         self.tabWidget = QTabWidget()
         self.tabWidget.addTab(self.Table4, "双曲线裁剪拟合")
@@ -383,6 +410,10 @@ class main(QMainWindow):
         self.savedatafileButton = QPushButton("保存当前状态")
         self.savetabgrid.addWidget(self.savedatafileButton, 3, 1, 1, 1)
         self.savedatafileButton.clicked.connect(lambda: self.savedatafileButtonclicked())
+
+        self.savefilesontxtButton = QPushButton("保存预处理后的TXT")
+        self.savetabgrid.addWidget(self.savefilesontxtButton, 4, 1, 1, 1)
+        self.savefilesontxtButton.clicked.connect(lambda: self.savefilesontxtButtonclicked())
 
         self.cutstartlabel = QLabel("删除数据个数(前):")
         self.cutstartlabel.setAlignment(Qt.AlignRight)
@@ -509,6 +540,7 @@ class main(QMainWindow):
 
     def loadache(self):
         filename = os.getcwd()+"/cache/temp.ache"
+        historydatapath=os.getcwd()+"/cache/historydata.ache"
         if (os.path.exists(filename)):
             f = open(filename, 'rb')
             filepath = pickle.load(f)
@@ -520,6 +552,13 @@ class main(QMainWindow):
                     # print(data)
                 self.updatareadhistory(data)
 
+        # 读取最近添加缓存
+        if (os.path.exists(historydatapath)):
+            f = open(historydatapath, 'rb')
+            historydata = pickle.load(f)
+            f.close()
+            self.historydata=historydata
+            self.Table7.addItems(self.historydata)
 
     def closeEvent(self, a0: QtGui.QCloseEvent) -> None:
         # print()
@@ -532,9 +571,10 @@ class main(QMainWindow):
         filepath = os.getcwd() + "/cache/"
         if (not os.path.exists(filepath)):
             os.makedirs(filepath)
-        datapath = self.inpath + "/" + os.path.basename(self.inpath) + ".data"
+        datapath = self.data.inpath + "/" + os.path.basename(self.data.inpath) + ".data"
         with open(filename, "wb") as file:
             pickle.dump(datapath, file, True)
+
 
     def readfileButtonclicked(self):
         self.savedatafileButtonclicked()
@@ -545,15 +585,16 @@ class main(QMainWindow):
         # path = "D:/工作文件2/lhy"
         if path == "":
             self.statusBar().showMessage("未选择文件夹！")
-        elif (path == self.inpath):
+        elif (path == self.data.inpath):
             self.statusBar().showMessage("读取文件夹位置未改变！")
         else:
             print(path)
+            self.addhistorydata(path)
             # self.uploadinfthread=UploadClient(path)
             # self.uploadinfthread.start()
             if(os.path.exists(path+"/"+os.path.basename(path)+".data")):
                 #有历史数据
-                self.inpath = path
+                # self.inpath = path
                 self.thraedreadhistory=readhistory(path+"/"+os.path.basename(path)+".data")
                 self.thraedreadhistory.sinOuttext.connect(self.updatestatusbar)
                 self.thraedreadhistory.sinOutoutEndThread.connect(self.updatareadhistory)
@@ -565,12 +606,12 @@ class main(QMainWindow):
                 self.inLineEdit.blockSignals(True)
                 self.inLineEdit.setText(path)
                 self.inLineEdit.blockSignals(False)
-                self.inpath = path
-                self.outpath = self.inpath + "/预处理后的数据"
+                # self.inpath = path
+                self.outpath = path + "/预处理后的数据"
                 self.outLineEdit.blockSignals(True)
                 self.outLineEdit.setText(self.outpath)
                 self.outLineEdit.blockSignals(False)
-                self.threadread=readthread(self.inpath)
+                self.threadread=readthread(path)
                 # self.threadread.sinOutoutpath.connect(self.updatepath)
                 self.threadread.sinOuttext.connect(self.updatestatusbar)
                 self.threadread.sinOutpro.connect(self.updatepro)
@@ -595,12 +636,13 @@ class main(QMainWindow):
         path = self.inLineEdit.text()
         if (not (os.path.exists(path))):
             self.statusBar().showMessage("文件夹不存在，请重新输入！")
-        elif (path == self.inpath):
+        elif (path == self.data.inpath):
             self.statusBar().showMessage("读取文件夹位置未改变！")
         else:
+            self.addhistorydata(path)
             if (os.path.exists(path + "/" + os.path.basename(path) + ".data")):
                 # 有历史数据
-                self.inpath = path
+                # self.inpath = path
                 self.thraedreadhistory = readhistory(path + "/" + os.path.basename(path) + ".data")
                 self.thraedreadhistory.sinOuttext.connect(self.updatestatusbar)
                 self.thraedreadhistory.sinOutoutEndThread.connect(self.updatareadhistory)
@@ -612,12 +654,12 @@ class main(QMainWindow):
                 self.inLineEdit.blockSignals(True)
                 self.inLineEdit.setText(path)
                 self.inLineEdit.blockSignals(False)
-                self.inpath = path
-                self.outpath = self.inpath + "/预处理后的数据"
+                # self.inpath = path
+                self.outpath = path + "/预处理后的数据"
                 self.outLineEdit.blockSignals(True)
                 self.outLineEdit.setText(self.outpath)
                 self.outLineEdit.blockSignals(False)
-                self.threadread = readthread(self.inpath)
+                self.threadread = readthread(path)
                 # self.threadread.sinOutoutpath.connect(self.updatepath)
                 self.threadread.sinOuttext.connect(self.updatestatusbar)
                 self.threadread.sinOutpro.connect(self.updatepro)
@@ -942,7 +984,7 @@ class main(QMainWindow):
         self.FigtabWidget.setCurrentIndex(1)
         self.figure2.fig.canvas.draw_idle()
         self.figure2.axes.clear()
-        plt.grid()
+        # plt.grid()
         title = ""
         numstart1 = self.data.filelist[self.Table2V].paras["指数拟合"][index].cutstartnum1
         numend1 = self.data.filelist[self.Table2V].paras["指数拟合"][index].cutendnum1
@@ -991,6 +1033,46 @@ class main(QMainWindow):
         self.imagen2Name = title
         self.figure2.axes.legend()
 
+    def table7clicked(self,index:QModelIndex):
+        path=self.historydata[index.row()]
+        print(path)
+        if (index.row()==0):
+            return
+
+        if(not os.path.exists(path)):
+            self.statusBar().showMessage("此文件夹已删除，请重新选择！")
+            return
+        # self.uploadinfthread=UploadClient(path)
+        # self.uploadinfthread.start()
+        if (os.path.exists(path + "/" + os.path.basename(path) + ".data")):
+            # 有历史数据
+            # self.inpath = path
+            self.thraedreadhistory = readhistory(path + "/" + os.path.basename(path) + ".data")
+            self.thraedreadhistory.sinOuttext.connect(self.updatestatusbar)
+            self.thraedreadhistory.sinOutoutEndThread.connect(self.updatareadhistory)
+            self.thraedreadhistory.start()
+        else:
+            # 无历史数据
+            self.fitComboBox.clear()
+            self.fitComboBox.addItems(["批量拟合"])
+            self.inLineEdit.blockSignals(True)
+            self.inLineEdit.setText(path)
+            self.inLineEdit.blockSignals(False)
+            # self.inpath = path
+            self.outpath = path + "/预处理后的数据"
+            self.outLineEdit.blockSignals(True)
+            self.outLineEdit.setText(self.outpath)
+            self.outLineEdit.blockSignals(False)
+            self.threadread = readthread(path)
+            # self.threadread.sinOutoutpath.connect(self.updatepath)
+            self.threadread.sinOuttext.connect(self.updatestatusbar)
+            self.threadread.sinOutpro.connect(self.updatepro)
+            self.threadread.sinOutoutEndThread.connect(self.updateData)
+            self.threadread.sinOutoutEndThread.connect(self.savedatafileButtonclicked)
+            self.threadread.sinOutbool.connect(self.provisible)
+            # self.threadread.sinOutoutData.connect(self.updateData)
+            self.threadread.start()
+        self.addhistorydata(path)
     def cutshowchange(self, index):
         print("cutshowchange")
         self.showcut = index
@@ -1004,7 +1086,7 @@ class main(QMainWindow):
 
 
     def ChangedcutComboBoxstart(self, index):
-        print()
+        pass
 
     def savefileButtonclicked(self):
         if (self.Table2.rowCount() > 0):
@@ -1032,6 +1114,19 @@ class main(QMainWindow):
             self.statusBar().showMessage(
                 "请添加数据文件！")
 
+    def savefilesontxtButtonclicked(self):
+        # self.data.writesondataXls(self.outpath)
+        if (self.Table2.rowCount() > 0):
+            self.savesondatatxtthread=savesondatatxtthread(self.data)
+            self.savesondatatxtthread.sinOuttext.connect(self.updatestatusbar)
+            self.savesondatatxtthread.sinOutpro.connect(self.updatepro)
+            self.savesondatatxtthread.sinOutbool.connect(self.provisible)
+            self.savesondatatxtthread.start()
+            # self.data.writeXls(self.outpath)
+        else:
+            self.statusBar().showMessage(
+                "请添加数据文件！")
+
     def savesinglefilesonButtonclicked(self):
         # self.data.writesinglefiledata(self.outpath)
         # self.data.writesondataXls(self.outpath)
@@ -1052,11 +1147,11 @@ class main(QMainWindow):
     def savedatafileButtonclicked(self):
         print("savedatafileButtonclicked")
         try:
-            print("self.data.inpath:",self.inpath)
-            if(self.inpath!=""):
+            print("self.data.inpath:",self.data.inpath)
+            if(self.data.inpath!=""):
                 self.statusBar().showMessage(
                     "正在保存当前状态...")
-                self.data.inpath = self.inpath
+                # self.data.inpath = self.inpath
                 self.data.outpath = self.outpath
                 self.data.imagen1Name = self.imagen1Name
                 self.data.imagen2Name = self.imagen2Name
@@ -1082,13 +1177,18 @@ class main(QMainWindow):
                 self.data.fitComboBoxtext = self.fitComboBox.currentText()
                 self.data.cutComboBoxstarttext = self.cutComboBoxstart.currentText()
                 self.data.cutComboBoxendtext = self.cutComboBoxend.currentText()
-                self.savehistory=savehistory(self.inpath,self.data)
+                self.savehistory=savehistory(self.data.inpath,self.data)
                 self.savehistory.sinOuttext.connect(self.updatestatusbar)
                 self.savehistory.start()
+
+
 
         except Exception as a:
             print(a)
             traceback.print_exc()
+
+
+
     def saveImage1Buttonlicked(self):
         if (not os.path.exists(self.outpath + "/双曲线图片文件/")):
             os.makedirs(self.outpath + "/双曲线图片文件/")
@@ -1182,6 +1282,45 @@ class main(QMainWindow):
         self.threadfit.sinOuttext.connect(self.updatestatusbar)
         self.threadfit.sinOutbool.connect(self.provisible)
         self.threadfit.start()
+
+    def deletedataButtonclicked(self):
+        print("deletedataButtonclicked")
+        rows=[indext.row() for indext in self.Table2.verticalHeader().selectionModel().selectedIndexes()]
+        rows=set(rows)
+        names=[self.Table2.item(key, 0).text() for key in rows]
+        for name in names:
+            del self.data.filelist[name]
+        self.updatefitdata()
+        self.savedatafileButtonclicked()
+        self.statusBar().showMessage(
+            '已移除' + str(len(rows)) + '条数据!')
+
+    def backdataclicked(self):
+        print("self.data.inpath:",self.data.inpath)
+        datapath = self.data.inpath + "/" + os.path.basename(self.data.inpath) + ".data"
+        print(datapath)
+        if os.path.exists(datapath):
+            os.remove(datapath)
+            # 无历史数据
+            self.fitComboBox.clear()
+            self.fitComboBox.addItems(["批量拟合"])
+            self.inLineEdit.blockSignals(True)
+            self.inLineEdit.setText(self.data.inpath)
+            self.inLineEdit.blockSignals(False)
+            # self.inpath = self.data.inpath
+            self.outpath = self.data.inpath + "/预处理后的数据"
+            self.outLineEdit.blockSignals(True)
+            self.outLineEdit.setText(self.outpath)
+            self.outLineEdit.blockSignals(False)
+            self.threadread = readthread(self.data.inpath)
+            # self.threadread.sinOutoutpath.connect(self.updatepath)
+            self.threadread.sinOuttext.connect(self.updatestatusbar)
+            self.threadread.sinOutpro.connect(self.updatepro)
+            self.threadread.sinOutoutEndThread.connect(self.updateData)
+            self.threadread.sinOutoutEndThread.connect(self.savedatafileButtonclicked)
+            self.threadread.sinOutbool.connect(self.provisible)
+            # self.threadread.sinOutoutData.connect(self.updateData)
+            self.threadread.start()
 
     def generateMenu2(self, pos):
         print("generateMenu2")
@@ -1746,6 +1885,7 @@ class main(QMainWindow):
         self.data=data
         self.fitComboBox.clear()
         self.fitComboBox.addItems(["批量拟合"])
+        # self.inpath=
         self.outpath = self.data.outpath + "/预处理后的数据"
         self.inLineEdit.blockSignals(True)
         self.inLineEdit.setText(self.data.inpath)
@@ -1848,8 +1988,29 @@ class main(QMainWindow):
             self.Table6.setItem(i, 14, QTableWidgetItem(str(self.data.filelist[key].Channel_Number)))
             i += 1
         self.updatefitdata()
-        self.statusBar().showMessage("已加载历史数据！")
+        self.statusBar().showMessage("已加载"+str(len(self.data.filelist))+"条历史数据！")
 
+
+    def addhistorydata(self,data):
+        # 更新historydata
+        if data in self.historydata:
+            self.historydata.remove(data)
+        self.historydata.insert(0,data)
+
+        # 保存历史添加
+        filepath = os.getcwd() + "/cache/"
+        if (not os.path.exists(filepath)):
+            os.makedirs(filepath)
+
+        filename = os.getcwd() + "/cache/historydata.ache"
+
+        with open(filename, "wb") as file:
+            pickle.dump(self.historydata, file, True)
+            print("历史添加保存成功！")
+
+        # 更新table7
+        self.Table7.clear()
+        self.Table7.addItems(self.historydata)
 
     def provisible(self,isvisible):
         print("更新进度条可见")

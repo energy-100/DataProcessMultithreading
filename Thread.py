@@ -152,6 +152,25 @@ class savesondatathread(QThread):
         Process.writesondataXls(self.data)
         # self.sinOutoutfitEndThread.emit()
 
+class savesondatatxtthread(QThread):
+    sinOutpro = pyqtSignal(float)
+    sinOuttext = pyqtSignal(str)
+    sinOutbool = pyqtSignal(bool)
+
+    # sinOutoutfitEndThread = pyqtSignal()
+    # sinOutoutpath = pyqtSignal(str)
+    # sinOutoutData = pyqtSignal(dataclass)
+    def __init__(self, data):
+        self.data = data
+        super(savesondatatxtthread, self).__init__()
+
+    def run(self):
+        print("启动保存数据子矩阵线程...")
+        Process = dataProcess(self.sinOutpro, self.sinOuttext, self.sinOutbool)
+        # Process.data = self.data
+        Process.writesondatatxt(self.data)
+        # self.sinOutoutfitEndThread.emit()
+
 class savesingledatathread(QThread):
     sinOutpro = pyqtSignal(float)
     sinOuttext = pyqtSignal(str)
