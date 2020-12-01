@@ -25,12 +25,13 @@ class main(QMainWindow):
         self.outpath = ""
         self.imagen1Name = ''
         self.imagen2Name = ''
-        self.imagen3Name = ''
-        self.imagen4Name = ''
+        self.imagen6Name = ''
+        self.imagen7Name = ''
         self.Table2V = ""
         self.Table2H = ""
         self.showcut = 0
         self.featurex = 0
+        self.fitweightindex=0
         self.b1low = [0.8, 0.1, 0, 0]
         self.b1top = [1.2, 1000, 1000, 1000000]
         self.b2low = [0.8, 0.1, 0]
@@ -49,7 +50,7 @@ class main(QMainWindow):
         self.grid = QGridLayout(self)
 
         self.buttontab = QTabWidget()
-        self.buttontab.setMaximumHeight(400)
+        self.buttontab.setMaximumHeight(450)
 
         self.buttontabgrid = QGridLayout(self)
         self.savetabgrid = QGridLayout(self)
@@ -75,6 +76,8 @@ class main(QMainWindow):
         # todo： 定义Figure
         self.figure = Mydemo(width=10, height=2, dpi=100)
         self.figure2 = Mydemo(width=10, height=2, dpi=100)
+        self.figure6 = Mydemo(width=10, height=2, dpi=100)
+        self.figure7 = Mydemo(width=10, height=2, dpi=100)
         self.figure3 = Mydemo(width=10, height=2, dpi=100)
         self.figure4 = MatplotWidget1()
         self.figure5 = Mydemo(width=10, height=2, dpi=100)
@@ -95,10 +98,13 @@ class main(QMainWindow):
         self.FigtabWidget = QTabWidget()
         self.FigtabWidget.addTab(self.figure, "双曲线拟合")
         self.FigtabWidget.addTab(self.figure2, "指数拟合")
+        self.FigtabWidget.addTab(self.figure6, "双曲线积分拟合")
+        self.FigtabWidget.addTab(self.figure7, "指数积分拟合")
         self.FigtabWidget.addTab(self.figure3, "参数分析")
         self.FigtabWidget.addTab(self.figure4, "概率分布分析")
-        self.FigtabWidget.addTab(self.figure5, "双曲-指数对比图")
-        self.FigtabWidget.setMaximumHeight(400)
+        self.FigtabWidget.addTab(self.figure5, "多曲线对比图")
+
+        self.FigtabWidget.setMaximumHeight(450)
         self.grid.addWidget(self.FigtabWidget, 0, 3, 4, 12)
 
         # todo：高级设置
@@ -286,6 +292,10 @@ class main(QMainWindow):
         self.deletedataButton.clicked.connect(self.deletedataButtonclicked)
         self.grid.addWidget(self.deletedataButton, 4, 9, 1, 1)
 
+        self.getMeandataButton = QPushButton("求数据整体均值")
+        self.getMeandataButton.clicked.connect(self.getMeandataclicked)
+        self.grid.addWidget(self.getMeandataButton, 4, 7, 1, 1)
+
         self.backdataButton = QPushButton("重置当前数据")
         self.backdataButton.clicked.connect(self.backdataclicked)
         self.grid.addWidget(self.backdataButton, 4, 8, 1, 1)
@@ -301,6 +311,8 @@ class main(QMainWindow):
         self.Table2.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.Table2.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.Table2.horizontalHeader().sectionClicked.connect(self.Table2HorizontalHeaderClick)
+        self.Table2.verticalScrollBar().valueChanged.connect(self.Table2verticalScrollbarvaluechanged)
+
         # self.Table2.setSelectionMode(QAbstractItemView.MultiSelection)
         self.Table2.verticalHeader().sectionClicked.connect(self.Table2VerticalHeaderClick)
         self.Table2.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -313,6 +325,7 @@ class main(QMainWindow):
         self.Table3.setEditTriggers(QAbstractItemView.NoEditTriggers)
         # self.grid.addWidget(self.Table3, 5, 10, 1, 5)
 
+        #拟合历史
         self.Table4 = QTableWidget()
         self.Table4.verticalHeader().sectionClicked.connect(self.Table4VerticalHeaderClick)
         self.Table5 = QTableWidget()
@@ -324,7 +337,18 @@ class main(QMainWindow):
         self.Table5.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.Table5.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
-        # self.grid.addWidget(self.Table3, 5, 10, 1, 5)
+        #积分拟合历史
+        self.Table8 = QTableWidget()
+        self.Table8.verticalHeader().sectionClicked.connect(self.Table8VerticalHeaderClick)
+        self.Table9 = QTableWidget()
+        self.Table9.verticalHeader().sectionClicked.connect(self.Table9VerticalHeaderClick)
+        # self.Table8.horizontalHeader().sectionClicked.connect(self.Table8HorizontalHeaderClick)
+        # self.Table8.verticalHeader().sectionClicked.connect(self.Table8VerticalHeaderClick)
+        self.Table8.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.Table8.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.Table9.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.Table9.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
 
         self.Table6 = QTableWidget()
         self.Table6.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -341,8 +365,10 @@ class main(QMainWindow):
         # self.Table7.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         self.tabWidget = QTabWidget()
-        self.tabWidget.addTab(self.Table4, "双曲线裁剪拟合")
-        self.tabWidget.addTab(self.Table5, "指数裁剪拟合")
+        self.tabWidget.addTab(self.Table4, "单文件双曲线拟合历史")
+        self.tabWidget.addTab(self.Table5, "单文件指数拟合历史")
+        self.tabWidget.addTab(self.Table8, "单文件双曲线积分拟合历史")
+        self.tabWidget.addTab(self.Table9, "单文件指数积分拟合历史")
         self.tabWidget.addTab(self.Table3, "数据子矩阵")
         self.tabWidget.addTab(self.Table6, "文件详细信息")
 
@@ -372,7 +398,7 @@ class main(QMainWindow):
         # self.cutButton.clicked.connect(lambda: self.cutButtonlicked())
 
         self.fitButton = QPushButton("数据拟合")
-        self.buttontabgrid.addWidget(self.fitButton, 7, 2, 1, 1)
+        self.buttontabgrid.addWidget(self.fitButton, 8, 0, 1, 3)
         self.fitButton.clicked.connect(lambda: self.fitButtonlicked())
 
         self.saveImageButton1 = QPushButton("保存双曲线图片")
@@ -445,6 +471,19 @@ class main(QMainWindow):
         # self.fitComboBox.currentIndexChanged.connect(lambda: self.ChangedfitComboBox())
         self.buttontabgrid.addWidget(self.fitComboBox, 6, 1, 1, 2)
 
+
+        self.fitweightlabel = QLabel("拟合权重参数:")
+        # self.fitlabel.setAlignment(Qt.AlignRight)
+        self.buttontabgrid.addWidget(self.fitweightlabel, 7, 0, 1, 1)
+
+        self.fitweightComboBox = QComboBox()
+        self.fitweightComboBox.addItems(
+            ["权重全部为1","权重为1/y","权重为子矩阵方差"])
+        self.fitweightComboBox.currentIndexChanged.connect(self.fitweightComboBoxindexchanged)
+        # self.fitComboBox.setCurrentIndex(0)
+        # self.fitComboBox.currentIndexChanged.connect(lambda: self.ChangedfitComboBox())
+        self.buttontabgrid.addWidget(self.fitweightComboBox, 7, 1, 1, 2)
+
         ComBoxlist = [str(i) for i in range(0, 101)]
         # ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
         #  "20"]
@@ -476,10 +515,10 @@ class main(QMainWindow):
         self.cb2.setChecked(True)
         self.buttontabgrid.addWidget(self.cb2, 3, 0, 1, 1)
         self.cb3 = QCheckBox('双曲积分', self)
-        self.cb3.setEnabled(False)
+        self.cb3.setChecked(True)
         self.buttontabgrid.addWidget(self.cb3, 4, 0, 1, 1)
         self.cb4 = QCheckBox('指数积分', self)
-        self.cb4.setEnabled(False)
+        self.cb4.setChecked(True)
         self.buttontabgrid.addWidget(self.cb4, 5, 0, 1, 1)
 
         self.cb1ComboBoxstart = QComboBox()
@@ -588,7 +627,7 @@ class main(QMainWindow):
         elif (path == self.data.inpath):
             self.statusBar().showMessage("读取文件夹位置未改变！")
         else:
-            print(path)
+            # print(path)
             self.addhistorydata(path)
             # self.uploadinfthread=UploadClient(path)
             # self.uploadinfthread.start()
@@ -685,8 +724,8 @@ class main(QMainWindow):
         print("Table2HorizontalHeaderClick")
         if self.Table2.verticalHeader().selectionModel().selectedIndexes() == []:
             return
-        if ((index != 0) and (index != 1)):
-            print("序号", index)
+        if (index not in[0,1,5,15] ):
+            # print("序号", index)
             colselectv = []
             tempdict = dict()
             maxv = 0
@@ -702,8 +741,8 @@ class main(QMainWindow):
                 if value == maxv:
                     colselectv.append(key)
             # colselect.discard(1)
-            print("tempdict", tempdict)
-            print("colselect", colselectv)
+            # print("tempdict", tempdict)
+            # print("colselect", colselectv)
 
             # for indext in self.Table2.horizontalHeader().selectionModel().selectedIndexes():
             #     colselect.add(indext.column())
@@ -727,8 +766,8 @@ class main(QMainWindow):
                     colselect.add(key)
             colselect.discard(1)
             colselect.discard(0)
-            print("tempdict", tempdict)
-            print("colselect", colselect)
+            # print("tempdict", tempdict)
+            # print("colselect", colselect)
             if len(colselect) == (self.Table2.columnCount() - 2):
                 return
             if colselectv == []:
@@ -747,15 +786,17 @@ class main(QMainWindow):
                     if (self.Table2.item(i, colnum).text() == ""):
                         y.append(0)
                     else:
-                        y.append(float(self.Table2.item(i, colnum).text()))
+                        y.append(float(self.Table2.item(i, colnum).text().split("±")[0]))
                 ys.append(y)
             for time in colselectv:
                 x.append(self.data.filelist[self.Table2.item(time, 0).text()].ACQ_Time)
             self.plotfeature(x, ys, title)
 
     def Table2VerticalHeaderClick(self, index):
-        print("Table2VerticalHeaderClick")
-        print("序号", index)
+        print("Table2VerticalHeaderClick",index)
+
+        self.data.Table2selectrow=index
+        # print("序号", index)
         colselectv = []
         tempdict = dict()
         maxv = 0
@@ -772,8 +813,8 @@ class main(QMainWindow):
                 name = self.Table2.item(key, 0).text()
                 colselectv.append(name)
         # colselect.discard(1)
-        print("tempdict", tempdict)
-        print("colselect", colselectv)
+        # print("tempdict", tempdict)
+        # print("colselect", colselectv)
 
         self.Table6.scrollToItem(self.Table6.item(index, 0), QAbstractItemView.PositionAtTop)
         self.Table6.selectRow(index)
@@ -788,6 +829,10 @@ class main(QMainWindow):
             self.Table4.selectRow(self.Table4.rowCount() - 1)
         if (self.Table5.rowCount() != 0):
             self.Table5.selectRow(self.Table5.rowCount() - 1)
+        if (self.Table8.rowCount() != 0):
+            self.Table8.selectRow(self.Table8.rowCount() - 1)
+        if (self.Table9.rowCount() != 0):
+            self.Table9.selectRow(self.Table9.rowCount() - 1)
 
         # x=self.data.filelist[filename].Pro_Data1_X
         # y=self.data.filelist[filename].Pro_Data1
@@ -832,22 +877,22 @@ class main(QMainWindow):
 
     def Table3HorizontalHeaderClick(self, index):
         print("Table3HorizontalHeaderClick")
-        self.FigtabWidget.setCurrentIndex(3)
-        print(index)
+        self.FigtabWidget.setCurrentIndex(5)
+        # print(index)
         # print(self.Table2.horizontalHeaderItem(index).text())
         # if(index==1):
         row = []
         x = []
         for i in range(1, self.Table3.rowCount()):
-            row.append(float(self.Table3.item(i, index).text()))
+            row.append(int(self.Table3.item(i, index).text()))
         self.plotperspot(x, row, self.Table2V + "第" + str(index + 1) + "个数据点重复测试数值变化图")
         self.imagen4Name = self.Table2V + "第" + str(index + 1) + "个数据点重复测试数值变化图"
         self.figure4.make_plot(row)
 
     def Table3VerticalHeaderClick(self, index):
         print("Table3VerticalHeaderClick")
-        self.FigtabWidget.setCurrentIndex(2)
-        print(index)
+        self.FigtabWidget.setCurrentIndex(5)
+        # print(index)
         # print(self.Table2.horizontalHeaderItem(index).text())
         # if(index==1):
         row = []
@@ -861,71 +906,159 @@ class main(QMainWindow):
         print("updataTable45")
         self.Table4.clear()
         self.Table5.clear()
+        self.Table8.clear()
+        self.Table9.clear()
         self.Table4.setColumnCount(0)
         self.Table5.setColumnCount(0)
+        self.Table8.setColumnCount(0)
+        self.Table9.setColumnCount(0)
         self.Table4.setRowCount(0)
         self.Table5.setRowCount(0)
+        self.Table8.setRowCount(0)
+        self.Table9.setRowCount(0)
 
         if (self.Table2V != ""):
 
             if (self.data.filelist[self.Table2V].paras["双曲线拟合"] != []):
-                self.Table4.setColumnCount(13)
+                self.Table4.setColumnCount(14)
                 self.Table4.setRowCount(len(self.data.filelist[self.Table2V].paras["双曲线拟合"]))
                 self.Table4.setHorizontalHeaderLabels(
-                    ["文件名", "前截点", "后截点", "Max", "I_0", "τ", "Γ", "D", "τ/Γ", "R_square", "SSE", "MSE", "RMSE"])
+                    ["文件名", "前截点", "后截点", "Max", "拟合权重","I_0", "τ", "Γ", "D", "τ/Γ", "R_square", "SSE", "MSE", "RMSE"])
                 p = 0
                 for temp in self.data.filelist[self.Table2V].paras["双曲线拟合"]:
                     self.Table4.setItem(p, 0, QTableWidgetItem(self.Table2V))
                     self.Table4.setItem(p, 1, QTableWidgetItem(str(temp.cutstartnumspot1)))
                     self.Table4.setItem(p, 2, QTableWidgetItem(str(temp.cutendnumspot1)))
                     self.Table4.setItem(p, 3, QTableWidgetItem(str(round(temp.Max, 2))))
-                    self.Table4.setItem(p, 4, QTableWidgetItem(str(round(temp.para[0], 2))))
-                    self.Table4.setItem(p, 5, QTableWidgetItem(str(round(temp.para[1], 2))))
-                    self.Table4.setItem(p, 6, QTableWidgetItem(str(round(temp.para[2], 2))))
-                    self.Table4.setItem(p, 7, QTableWidgetItem(str(round(temp.para[3], 2))))
-                    self.Table4.setItem(p, 8, QTableWidgetItem(str(round(temp.para[1] / temp.para[2], 2))))
-                    self.Table4.setItem(p, 9, QTableWidgetItem(str(round(temp.R2[0], 5))))
-                    self.Table4.setItem(p, 10, QTableWidgetItem(str(round(temp.R2[1], 5))))
-                    self.Table4.setItem(p, 11, QTableWidgetItem(str(round(temp.R2[2], 5))))
-                    self.Table4.setItem(p, 12, QTableWidgetItem(str(round(temp.R2[3], 5))))
-                    self.Table4.item(p, 4).setBackground(QBrush(QColor(205, 155, 155)))
+                    if temp.fitweightindex==1:
+                        self.Table4.setItem(p, 4, QTableWidgetItem(str("1/y")))
+                    elif temp.fitweightindex==2:
+                        self.Table4.setItem(p, 4, QTableWidgetItem(str("子矩阵方差")))
+                    else:
+                        self.Table4.setItem(p, 4, QTableWidgetItem(str("1")))
+                    self.Table4.setItem(p, 5, QTableWidgetItem(str(round(temp.para[0], 2))+"±"+str(round(temp.para_error[0], 5))))
+                    self.Table4.setItem(p, 6, QTableWidgetItem(str(round(temp.para[1], 2))+"±"+str(round(temp.para_error[1], 5))))
+                    self.Table4.setItem(p, 7, QTableWidgetItem(str(round(temp.para[2], 2))+"±"+str(round(temp.para_error[2], 5))))
+                    self.Table4.setItem(p, 8, QTableWidgetItem(str(round(temp.para[3], 2))+"±"+str(round(temp.para_error[3], 5))))
+                    self.Table4.setItem(p, 9, QTableWidgetItem(str(round(temp.para[1] / temp.para[2], 2))))
+                    self.Table4.setItem(p, 10, QTableWidgetItem(str(round(temp.R2[0], 5))))
+                    self.Table4.setItem(p, 11, QTableWidgetItem(str(round(temp.R2[1], 5))))
+                    self.Table4.setItem(p, 12, QTableWidgetItem(str(round(temp.R2[2], 5))))
+                    self.Table4.setItem(p, 13, QTableWidgetItem(str(round(temp.R2[3], 5))))
                     self.Table4.item(p, 5).setBackground(QBrush(QColor(205, 155, 155)))
                     self.Table4.item(p, 6).setBackground(QBrush(QColor(205, 155, 155)))
                     self.Table4.item(p, 7).setBackground(QBrush(QColor(205, 155, 155)))
                     self.Table4.item(p, 8).setBackground(QBrush(QColor(205, 155, 155)))
+                    self.Table4.item(p, 9).setBackground(QBrush(QColor(205, 155, 155)))
                     # self.Table4.item(p, 7).setBackground(QBrush(QColor(99, 196, 47)))
                     # self.Table4.item(p, 8).setBackground(QBrush(QColor(99, 196, 47)))
                     # self.Table4.item(p, 9).setBackground(QBrush(QColor(99, 196, 47)))
                     # self.Table4.item(p, 10).setBackground(QBrush(QColor(99, 196, 47)))
                     p += 1
             if (self.data.filelist[self.Table2V].paras["指数拟合"] != []):
-                self.Table5.setColumnCount(10)
+                self.Table5.setColumnCount(11)
                 self.Table5.setRowCount(len(self.data.filelist[self.Table2V].paras["指数拟合"]))
                 self.Table5.setHorizontalHeaderLabels(
-                    ["文件名", "前截点", "后截点", "Max", "I_0", "τ", "D", "R_square", "SSE", "MSE", "RMSE"])
+                    ["文件名", "前截点", "后截点", "Max", "拟合权重", "I_0", "τ", "D", "R_square", "SSE", "MSE", "RMSE"])
                 p = 0
                 for temp in self.data.filelist[self.Table2V].paras["指数拟合"]:
                     self.Table5.setItem(p, 0, QTableWidgetItem(self.Table2V))
                     self.Table5.setItem(p, 1, QTableWidgetItem(str(temp.cutstartnumspot1)))
                     self.Table5.setItem(p, 2, QTableWidgetItem(str(temp.cutendnumspot1)))
                     self.Table5.setItem(p, 3, QTableWidgetItem(str(round(temp.Max, 2))))
-                    self.Table5.setItem(p, 4, QTableWidgetItem(str(round(temp.para[0], 2))))
-                    self.Table5.setItem(p, 5, QTableWidgetItem(str(round(temp.para[1], 2))))
-                    self.Table5.setItem(p, 6, QTableWidgetItem(str(round(temp.para[2], 2))))
-                    self.Table5.setItem(p, 7, QTableWidgetItem(str(round(temp.R2[0], 5))))
-                    self.Table5.setItem(p, 8, QTableWidgetItem(str(round(temp.R2[1], 5))))
-                    self.Table5.setItem(p, 9, QTableWidgetItem(str(round(temp.R2[2], 5))))
-                    self.Table5.setItem(p, 10, QTableWidgetItem(str(round(temp.R2[3], 5))))
-                    self.Table5.item(p, 4).setBackground(QBrush(QColor(124, 205, 124)))
+                    if temp.fitweightindex == 1:
+                        self.Table5.setItem(p, 4, QTableWidgetItem(str("1/y")))
+                    elif temp.fitweightindex == 2:
+                        self.Table5.setItem(p, 4, QTableWidgetItem(str("子矩阵方差")))
+                    else:
+                        self.Table5.setItem(p, 4, QTableWidgetItem(str("1")))
+                    self.Table5.setItem(p, 5, QTableWidgetItem(str(round(temp.para[0], 2))+"±"+str(round(temp.para_error[0], 5))))
+                    self.Table5.setItem(p, 6, QTableWidgetItem(str(round(temp.para[1], 2))+"±"+str(round(temp.para_error[1], 5))))
+                    self.Table5.setItem(p, 7, QTableWidgetItem(str(round(temp.para[2], 2))+"±"+str(round(temp.para_error[2], 5))))
+                    self.Table5.setItem(p, 8, QTableWidgetItem(str(round(temp.R2[0], 5))))
+                    self.Table5.setItem(p, 9, QTableWidgetItem(str(round(temp.R2[1], 5))))
+                    self.Table5.setItem(p, 10, QTableWidgetItem(str(round(temp.R2[2], 5))))
+                    self.Table5.setItem(p, 11, QTableWidgetItem(str(round(temp.R2[3], 5))))
                     self.Table5.item(p, 5).setBackground(QBrush(QColor(124, 205, 124)))
                     self.Table5.item(p, 6).setBackground(QBrush(QColor(124, 205, 124)))
+                    self.Table5.item(p, 7).setBackground(QBrush(QColor(124, 205, 124)))
                     # self.Table5.item(p, 6).setBackground(QBrush(QColor(99, 196, 47)))
                     # self.Table5.item(p, 7).setBackground(QBrush(QColor(99, 196, 47)))
                     # self.Table5.item(p, 8).setBackground(QBrush(QColor(99, 196, 47)))
                     # self.Table5.item(p, 9).setBackground(QBrush(QColor(99, 196, 47)))
 
                     p += 1
+            if (self.data.filelist[self.Table2V].paras["双曲线积分拟合"] != []):
+                self.Table8.setColumnCount(14)
+                self.Table8.setRowCount(len(self.data.filelist[self.Table2V].paras["双曲线积分拟合"]))
+                self.Table8.setHorizontalHeaderLabels(
+                    ["文件名", "前截点", "后截点", "Max", "拟合权重","I_0", "τ", "Γ", "D", "τ/Γ", "R_square", "SSE", "MSE", "RMSE"])
+                p = 0
+                for temp in self.data.filelist[self.Table2V].paras["双曲线积分拟合"]:
+                    self.Table8.setItem(p, 0, QTableWidgetItem(self.Table2V))
+                    self.Table8.setItem(p, 1, QTableWidgetItem(str(temp.cutstartnumspot1)))
+                    self.Table8.setItem(p, 2, QTableWidgetItem(str(temp.cutendnumspot1)))
+                    self.Table8.setItem(p, 3, QTableWidgetItem(str(round(temp.Max, 2))))
+                    if temp.fitweightindex==1:
+                        self.Table8.setItem(p, 4, QTableWidgetItem(str("1/y")))
+                    elif temp.fitweightindex==2:
+                        self.Table8.setItem(p, 4, QTableWidgetItem(str("子矩阵方差")))
+                    else:
+                        self.Table8.setItem(p, 4, QTableWidgetItem(str("1")))
+                    self.Table8.setItem(p, 5, QTableWidgetItem(str(round(temp.para[0], 2))+"±"+str(round(temp.para_error[0], 5))))
+                    self.Table8.setItem(p, 6, QTableWidgetItem(str(round(temp.para[1], 2))+"±"+str(round(temp.para_error[1], 5))))
+                    self.Table8.setItem(p, 7, QTableWidgetItem(str(round(temp.para[2], 2))+"±"+str(round(temp.para_error[2], 5))))
+                    self.Table8.setItem(p, 8, QTableWidgetItem(str(round(temp.para[3], 2))+"±"+str(round(temp.para_error[3], 5))))
+                    self.Table8.setItem(p, 9, QTableWidgetItem(str(round(temp.para[1] / temp.para[2], 2))))
+                    self.Table8.setItem(p, 10, QTableWidgetItem(str(round(temp.R2[0], 5))))
+                    self.Table8.setItem(p, 11, QTableWidgetItem(str(round(temp.R2[1], 5))))
+                    self.Table8.setItem(p, 12, QTableWidgetItem(str(round(temp.R2[2], 5))))
+                    self.Table8.setItem(p, 13, QTableWidgetItem(str(round(temp.R2[3], 5))))
+                    self.Table8.item(p, 5).setBackground(QBrush(QColor(205, 155, 155)))
+                    self.Table8.item(p, 6).setBackground(QBrush(QColor(205, 155, 155)))
+                    self.Table8.item(p, 7).setBackground(QBrush(QColor(205, 155, 155)))
+                    self.Table8.item(p, 8).setBackground(QBrush(QColor(205, 155, 155)))
+                    self.Table8.item(p, 9).setBackground(QBrush(QColor(205, 155, 155)))
+                    # self.Table8.item(p, 7).setBackground(QBrush(QColor(99, 196, 47)))
+                    # self.Table8.item(p, 8).setBackground(QBrush(QColor(99, 196, 47)))
+                    # self.Table8.item(p, 9).setBackground(QBrush(QColor(99, 196, 47)))
+                    # self.Table8.item(p, 10).setBackground(QBrush(QColor(99, 196, 47)))
+                    p += 1
+            if (self.data.filelist[self.Table2V].paras["指数积分拟合"] != []):
+                self.Table9.setColumnCount(11)
+                self.Table9.setRowCount(len(self.data.filelist[self.Table2V].paras["指数积分拟合"]))
+                self.Table9.setHorizontalHeaderLabels(
+                    ["文件名", "前截点", "后截点", "Max", "拟合权重", "I_0", "τ", "D", "R_square", "SSE", "MSE", "RMSE"])
+                p = 0
+                for temp in self.data.filelist[self.Table2V].paras["指数积分拟合"]:
+                    self.Table9.setItem(p, 0, QTableWidgetItem(self.Table2V))
+                    self.Table9.setItem(p, 1, QTableWidgetItem(str(temp.cutstartnumspot1)))
+                    self.Table9.setItem(p, 2, QTableWidgetItem(str(temp.cutendnumspot1)))
+                    self.Table9.setItem(p, 3, QTableWidgetItem(str(round(temp.Max, 2))))
+                    if temp.fitweightindex == 1:
+                        self.Table9.setItem(p, 4, QTableWidgetItem(str("1/y")))
+                    elif temp.fitweightindex == 2:
+                        self.Table9.setItem(p, 4, QTableWidgetItem(str("子矩阵方差")))
+                    else:
+                        self.Table9.setItem(p, 4, QTableWidgetItem(str("1")))
+                    self.Table9.setItem(p, 5, QTableWidgetItem(str(round(temp.para[0], 2))+"±"+str(round(temp.para_error[0], 5))))
+                    self.Table9.setItem(p, 6, QTableWidgetItem(str(round(temp.para[1], 2))+"±"+str(round(temp.para_error[1], 5))))
+                    self.Table9.setItem(p, 7, QTableWidgetItem(str(round(temp.para[2], 2))+"±"+str(round(temp.para_error[2], 5))))
+                    self.Table9.setItem(p, 8, QTableWidgetItem(str(round(temp.R2[0], 5))))
+                    self.Table9.setItem(p, 9, QTableWidgetItem(str(round(temp.R2[1], 5))))
+                    self.Table9.setItem(p, 10, QTableWidgetItem(str(round(temp.R2[2], 5))))
+                    self.Table9.setItem(p, 11, QTableWidgetItem(str(round(temp.R2[3], 5))))
+                    self.Table9.item(p, 5).setBackground(QBrush(QColor(124, 205, 124)))
+                    self.Table9.item(p, 6).setBackground(QBrush(QColor(124, 205, 124)))
+                    self.Table9.item(p, 7).setBackground(QBrush(QColor(124, 205, 124)))
+                    # self.Table9.item(p, 6).setBackground(QBrush(QColor(99, 196, 47)))
+                    # self.Table9.item(p, 7).setBackground(QBrush(QColor(99, 196, 47)))
+                    # self.Table9.item(p, 8).setBackground(QBrush(QColor(99, 196, 47)))
+                    # self.Table9.item(p, 9).setBackground(QBrush(QColor(99, 196, 47)))
 
+                    p += 1
+
+    #此处修改对比图
     def Table4VerticalHeaderClick(self, index):
         print("Table4VerticalHeaderClick")
         self.FigtabWidget.setCurrentIndex(0)
@@ -1033,6 +1166,114 @@ class main(QMainWindow):
         self.imagen2Name = title
         self.figure2.axes.legend()
 
+    def Table8VerticalHeaderClick(self, index):
+        print("Table8VerticalHeaderClick")
+        self.FigtabWidget.setCurrentIndex(2)
+        self.figure6.fig.canvas.draw_idle()
+        self.figure6.axes.clear()
+        # plt.grid()
+
+        numstart1 = self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].cutstartnum1
+        numend1 = self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].cutendnum1
+        title = self.Table2V + "文件前截" + str(
+            self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].cutstartnumspot1) + "个点-后截" + str(
+            self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].cutendnumspot1) + "个点的双曲线积分拟合图"
+        self.figure6.fig.canvas.draw_idle()
+        self.figure6.axes.clear()
+
+        if (self.showcut == 0):
+
+            self.figure6.axes.plot(self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].xfit[0:numstart1 + 1],
+                                  self.data.filelist[self.Table2V].Pro_Data1[0:numstart1 + 1], "--",
+                                  color="green")  # 前半段
+            self.figure6.axes.plot(self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].xfit[numend1:],
+                                  self.data.filelist[self.Table2V].Pro_Data1[numend1:], "--", color="green")  # 后半段段
+
+            self.figure6.axes.scatter(self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].xfit[0:numstart1 + 1],
+                                     self.data.filelist[self.Table2V].Pro_Data1[0:numstart1 + 1], color="green",
+                                     alpha=0.3)  # 前半段
+            self.figure6.axes.scatter(self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].xfit[numend1:],
+                                     self.data.filelist[self.Table2V].Pro_Data1[numend1:], color="green",
+                                     alpha=0.3)  # 后半段段
+
+        # 原始曲线
+
+        self.figure6.axes.plot(self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].xfit[numstart1:numend1 + 1],
+                              self.data.filelist[self.Table2V].Pro_Data1[numstart1:numend1 + 1], color="blue")  # 中段
+
+        # 原始散点
+        self.figure6.axes.scatter(self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].xfit[numstart1:numend1 + 1],
+                                 self.data.filelist[self.Table2V].Pro_Data1[numstart1:numend1 + 1], color="blue",
+                                 alpha=0.3)
+
+        try:
+            self.figure6.axes.plot(self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].fitx,
+                                  self.data.filelist[self.Table2V].paras["双曲线积分拟合"][index].fity, color="red")
+
+        except Exception as a:
+            print(a)
+        # self.figure.axes.scatter(self.data.filelist[filename].Cut_Data1_X,self.data.filelist[filename].Cut_Data1, alpha=0.3)
+        self.figure6.axes.grid()
+        self.figure6.axes.set_ylabel("cps")
+        self.figure6.axes.set_xlabel("t")
+        self.figure6.axes.set_title(title)
+        self.imagen2Name = title
+        self.figure6.axes.legend()
+
+    def Table9VerticalHeaderClick(self, index):
+        print("Table5VerticalHeaderClick")
+        self.FigtabWidget.setCurrentIndex(3)
+        self.figure7.fig.canvas.draw_idle()
+        self.figure7.axes.clear()
+        # plt.grid()
+        title = ""
+        numstart1 = self.data.filelist[self.Table2V].paras["指数积分拟合"][index].cutstartnum1
+        numend1 = self.data.filelist[self.Table2V].paras["指数积分拟合"][index].cutendnum1
+        title = self.Table2V + "文件前截" + str(self.data.filelist[self.Table2V].paras["指数积分拟合"][
+                                                index].cutstartnumspot1) + "个点-后截" + str(
+            self.data.filelist[self.Table2V].paras["指数积分拟合"][
+                index].cutendnumspot1) + "个点的指数拟合图"
+        self.figure7.fig.canvas.draw_idle()
+        self.figure7.axes.clear()
+        # 原始曲线
+        if (self.showcut == 0):
+            self.figure7.axes.plot(self.data.filelist[self.Table2V].paras["指数积分拟合"][index].xfit[0:numstart1 + 1],
+                                   self.data.filelist[self.Table2V].Pro_Data1[0:numstart1 + 1], "--",
+                                   color="green")  # 前半段
+            self.figure7.axes.plot(self.data.filelist[self.Table2V].paras["指数积分拟合"][index].xfit[numend1:],
+                                   self.data.filelist[self.Table2V].Pro_Data1[numend1:], "--", color="green")  # 后半段段
+
+            self.figure7.axes.scatter(self.data.filelist[self.Table2V].paras["指数积分拟合"][index].xfit[0:numstart1 + 1],
+                                      self.data.filelist[self.Table2V].Pro_Data1[0:numstart1 + 1], color="green",
+                                      alpha=0.3)  # 前半段
+            self.figure7.axes.scatter(self.data.filelist[self.Table2V].paras["指数积分拟合"][index].xfit[numend1:],
+                                      self.data.filelist[self.Table2V].Pro_Data1[numend1:], color="green",
+                                      alpha=0.3)  # 后半段段
+
+        # 原始曲线
+
+        self.figure7.axes.plot(self.data.filelist[self.Table2V].paras["指数积分拟合"][index].xfit[numstart1:numend1 + 1],
+                               self.data.filelist[self.Table2V].Pro_Data1[numstart1:numend1 + 1], color="blue")  # 中段
+
+        # 原始散点
+        self.figure7.axes.scatter(self.data.filelist[self.Table2V].paras["指数积分拟合"][index].xfit[numstart1:numend1 + 1],
+                                  self.data.filelist[self.Table2V].Pro_Data1[numstart1:numend1 + 1], color="blue",
+                                  alpha=0.3)
+
+        try:
+            self.figure7.axes.plot(self.data.filelist[self.Table2V].paras["指数拟合"][index].fitx,
+                                   self.data.filelist[self.Table2V].paras["指数拟合"][index].fity, color="red")
+
+        except Exception as a:
+            print(a)
+        # self.figure2.axes.scatter(self.data.filelist[filename].Cut_Data1_X,self.data.filelist[filename].Cut_Data1, alpha=0.3)
+        self.figure7.axes.grid()
+        self.figure7.axes.set_ylabel("cps")
+        self.figure7.axes.set_xlabel("t")
+        self.figure7.axes.set_title(title)
+        self.imagen2Name = title
+        self.figure7.axes.legend()
+
     def table7clicked(self,index:QModelIndex):
         path=self.historydata[index.row()]
         print(path)
@@ -1041,6 +1282,9 @@ class main(QMainWindow):
 
         if(not os.path.exists(path)):
             self.statusBar().showMessage("此文件夹已删除，请重新选择！")
+            self.historydata.pop(index.row())
+            self.Table7.clear()
+            self.Table7.addItems(self.historydata)
             return
         # self.uploadinfthread=UploadClient(path)
         # self.uploadinfthread.start()
@@ -1073,6 +1317,7 @@ class main(QMainWindow):
             # self.threadread.sinOutoutData.connect(self.updateData)
             self.threadread.start()
         self.addhistorydata(path)
+
     def cutshowchange(self, index):
         print("cutshowchange")
         self.showcut = index
@@ -1084,6 +1329,10 @@ class main(QMainWindow):
         self.featurex = index
         self.data.featurex = index
 
+    def fitweightComboBoxindexchanged(self,index):
+        print("fitweightComboBoxindexchanged")
+        self.fitweightindex = index
+        self.data.fitweightindex = index
 
     def ChangedcutComboBoxstart(self, index):
         pass
@@ -1147,7 +1396,7 @@ class main(QMainWindow):
     def savedatafileButtonclicked(self):
         print("savedatafileButtonclicked")
         try:
-            print("self.data.inpath:",self.data.inpath)
+            # print("self.data.inpath:",self.data.inpath)
             if(self.data.inpath!=""):
                 self.statusBar().showMessage(
                     "正在保存当前状态...")
@@ -1155,8 +1404,8 @@ class main(QMainWindow):
                 self.data.outpath = self.outpath
                 self.data.imagen1Name = self.imagen1Name
                 self.data.imagen2Name = self.imagen2Name
-                self.data.imagen3Name = self.imagen3Name
-                self.data.imagen4Name = self.imagen4Name
+                self.data.imagen6Name = self.imagen6Name
+                self.data.imagen7Name = self.imagen7Name
                 self.data.Table2V = self.Table2V
                 self.data.Table2H = self.Table2H
                 self.data.showcut = self.showcut
@@ -1165,8 +1414,8 @@ class main(QMainWindow):
                 self.data.b1top = self.b1top
                 self.data.b2low = self.b2low
                 self.data.b2top = self.b2top
-                print("self.cb1.isChecked",int(self.cb1.isChecked()))
-                print("self.cb2.isChecked",int(self.cb2.isChecked()))
+                # print("self.cb1.isChecked",int(self.cb1.isChecked()))
+                # print("self.cb2.isChecked",int(self.cb2.isChecked()))
                 self.data.cb1setChecked=int(self.cb1.isChecked())
                 self.data.cb2setChecked=int(self.cb2.isChecked())
                 # self.data.currentimage1=self.figure.fig
@@ -1260,21 +1509,21 @@ class main(QMainWindow):
             # self.statusBar().showMessage("开始进行批量数据拟合...")
             index = self.fitComboBox.currentText().find("]")
             title = self.fitComboBox.currentText()[(index + 1):]
-            print(title)
+            # print(title)
         temppara=[]
         if (self.cb1.isChecked()):
             temppara.append([1, self.cb1ComboBoxstart.currentText(), startnum, endnum, title, self.b1low, self.b1top,
-                              self.b2low, self.b2top])
+                              self.b2low, self.b2top,self.fitweightindex])
         if (self.cb2.isChecked()):
             temppara.append([2, self.cb2ComboBoxstart.currentText(), startnum, endnum, title, self.b1low, self.b1top,
-                              self.b2low, self.b2top])
+                              self.b2low, self.b2top,self.fitweightindex])
         if (self.cb3.isChecked()):
             temppara.append([3, self.cb3ComboBoxstart.currentText(), startnum, endnum, title, self.b1low, self.b1top,
-                              self.b2low, self.b2top])
+                              self.b2low, self.b2top,self.fitweightindex])
         if (self.cb4.isChecked()):
             temppara.append([4, self.cb4ComboBoxstart.currentText(), startnum, endnum, title, self.b1low, self.b1top,
-                              self.b2low, self.b2top])
-        print(len(self.data.filelist))
+                              self.b2low, self.b2top,self.fitweightindex])
+        # print(len(self.data.filelist))
         self.threadfit = fitthread(self.data, temppara)
         self.threadfit.sinOutoutfitEndThread.connect(self.updatefitdata)
         self.threadfit.sinOutoutfitEndThread.connect(self.savedatafileButtonclicked)
@@ -1289,16 +1538,60 @@ class main(QMainWindow):
         rows=set(rows)
         names=[self.Table2.item(key, 0).text() for key in rows]
         for name in names:
+            self.data.filenames.remove(name)
             del self.data.filelist[name]
+
         self.updatefitdata()
         self.savedatafileButtonclicked()
         self.statusBar().showMessage(
             '已移除' + str(len(rows)) + '条数据!')
+        self.fitComboBox.clear()
+        self.fitComboBox.addItems(["批量拟合"])
+
+    def getMeandataclicked(self):
+        self.threadgetMean = getMeanthread(self.data)
+        self.threadgetMean.sinOutoutfitEndThread.connect(self.updatefitdata)
+        self.threadgetMean.sinOutoutfitEndThread.connect(self.savedatafileButtonclicked)
+        self.threadgetMean.sinOutoutfitEndThread.connect(self.fitMeandata)
+        self.threadgetMean.sinOuttext.connect(self.updatestatusbar)
+        self.threadgetMean.sinOutbool.connect(self.provisible)
+        self.threadgetMean.start()
+
+
+    def fitMeandata(self):
+        title=self.data.filenames[-1]
+        startnum = int(self.cutComboBoxstart.currentText())
+        endnum = int(self.cutComboBoxend.currentText())
+        temppara = []
+        if (self.cb1.isChecked()):
+            temppara.append([1, self.cb1ComboBoxstart.currentText(), startnum, endnum, title, self.b1low, self.b1top,
+                             self.b2low, self.b2top, self.fitweightindex])
+        if (self.cb2.isChecked()):
+            temppara.append([2, self.cb2ComboBoxstart.currentText(), startnum, endnum, title, self.b1low, self.b1top,
+                             self.b2low, self.b2top, self.fitweightindex])
+        if (self.cb3.isChecked()):
+            temppara.append([3, self.cb3ComboBoxstart.currentText(), startnum, endnum, title, self.b1low, self.b1top,
+                             self.b2low, self.b2top, self.fitweightindex])
+        if (self.cb4.isChecked()):
+            temppara.append([4, self.cb4ComboBoxstart.currentText(), startnum, endnum, title, self.b1low, self.b1top,
+                             self.b2low, self.b2top, self.fitweightindex])
+        # print(len(self.data.filelist))
+        self.threadfitMean = fitthread(self.data, temppara)
+        self.threadfitMean.sinOutoutfitEndThread.connect(self.updatefitdata)
+        self.threadfitMean.sinOutoutfitEndThread.connect(self.savedatafileButtonclicked)
+        self.threadfitMean.sinOutpro.connect(self.updatepro)
+        self.threadfitMean.sinOuttext.connect(self.updatestatusbar)
+        self.threadfitMean.sinOutbool.connect(self.provisible)
+        self.threadfitMean.start()
+
+
+
+
 
     def backdataclicked(self):
-        print("self.data.inpath:",self.data.inpath)
+        # print("self.data.inpath:",self.data.inpath)
         datapath = self.data.inpath + "/" + os.path.basename(self.data.inpath) + ".data"
-        print(datapath)
+        # print(datapath)
         if os.path.exists(datapath):
             os.remove(datapath)
             # 无历史数据
@@ -1323,7 +1616,7 @@ class main(QMainWindow):
             self.threadread.start()
 
     def generateMenu2(self, pos):
-        print("generateMenu2")
+        # print("generateMenu2")
         row_num = -1
         # fittype = QListWidgetItem(self.listwidget2.currentItem()).text()
         # filename = QListWidgetItem(self.listwidget1.currentItem()).text()
@@ -1338,11 +1631,11 @@ class main(QMainWindow):
         if row_num < self.Table2.rowCount():
             menu = QMenu()
             # item1 = menu.addAction("复制单元格["+rowlabel+","+collabel+"]"+currtext)
-            item1 = menu.addAction("复制单元格内容：" + currtext)
-            item2 = menu.addAction("复制第" + rowlabel + "组参数(带文件名)")
-            item3 = menu.addAction('提取每组参数中的"' + collabel + '"列(带列名)')
-            item4 = menu.addAction("复制第" + rowlabel + "组参数")
-            item5 = menu.addAction('提取每组参数中的"' + collabel + '"列')
+            item1 = menu.addAction('复制单元格内容->' + currtext)
+            item2 = menu.addAction('复制当前行(带文件名)->[' + rowlabel + ']')
+            item3 = menu.addAction('复制当前列(带列名)->[' + collabel + ']')
+            item4 = menu.addAction('复制当前行->[' + rowlabel + ']')
+            item5 = menu.addAction('复制当前列->[' + collabel + ']')
             action = menu.exec_(self.Table2.mapToGlobal(pos))
             if action == item1:
                 clipboard = QApplication.clipboard()
@@ -1354,7 +1647,7 @@ class main(QMainWindow):
                 text = ""
                 ind = self.Table2.currentIndex().row()
                 for j in range(self.Table2.columnCount()):
-                    text += self.Table2.item(ind, j).text() + ","
+                    text += self.Table2.item(ind, j).text() + "\t"
                 clipboard.setText(text)
                 self.statusBar().showMessage(
                     '已复制:"' + self.Table2.item(self.Table2.currentIndex().row(), 0).text() + "的参数与数据(带文件名)")
@@ -1363,9 +1656,9 @@ class main(QMainWindow):
                 clipboard = QApplication.clipboard()
                 text = ""
                 ind = self.Table2.currentIndex().column()
-                text += collabel + ","
+                text += collabel + "\t"
                 for i in range(self.Table2.rowCount()):
-                    text += self.Table2.item(i, ind).text() + ","
+                    text += self.Table2.item(i, ind).text() + "\t"
                 clipboard.setText(text)
                 self.statusBar().showMessage("已提取每组参数中的" + collabel + "列特征(带列名)")
             elif action == item4:
@@ -1373,7 +1666,7 @@ class main(QMainWindow):
                 text = ""
                 ind = self.Table2.currentIndex().row()
                 for j in range(1, self.Table2.columnCount()):
-                    text += self.Table2.item(ind, j).text() + ","
+                    text += self.Table2.item(ind, j).text() + "\t"
                 clipboard.setText(text)
                 self.statusBar().showMessage(
                     '已复制:"' + self.Table2.item(self.Table2.currentIndex().row(), 0).text() + "的参数与数据")
@@ -1382,14 +1675,14 @@ class main(QMainWindow):
                 text = ""
                 ind = self.Table2.currentIndex().column()
                 for i in range(self.Table2.rowCount()):
-                    text += self.Table2.item(i, ind).text() + ","
+                    text += self.Table2.item(i, ind).text() + "\t"
                 clipboard.setText(text)
                 self.statusBar().showMessage("已提取每组参数中的" + collabel + "列特征")
             else:
                 return
 
     def plotfeature(self, x, ys, title=[], xlabel="t", ylabel="cps"):
-        print("plotfeature")
+        # print("plotfeature")
         # xtamp=[]    #时间戳
         # for temp in x:
         #     xtamp.append(time.mktime(temp.timetuple()))
@@ -1410,7 +1703,7 @@ class main(QMainWindow):
                 xtemp = range(1, len(x) + 1)
                 ydicts.append([xtemp, ys[i]])
 
-        print(ydicts)
+        # print(ydicts)
 
         self.FigtabWidget.setCurrentIndex(2)
         titleall = "所选数据文件"
@@ -1426,7 +1719,7 @@ class main(QMainWindow):
 
         for i in range(len(ydicts)):
             datacell = ydicts[i]
-            print("datacell", datacell)
+            # print("datacell", datacell)
             # print(title[i])
             self.figure3.axes.plot(datacell[0], datacell[1], label=title[i])
             self.figure3.axes.scatter(datacell[0], datacell[1], label=title[i], alpha=0.5)
@@ -1451,8 +1744,8 @@ class main(QMainWindow):
         # self.FigtabWidget.setCurrentIndex(2)
         if (x == []):
             x = range(1, len(y) + 1)
-        print(x)
-        print(y)
+        # print(x)
+        # print(y)
         self.figure3.fig.canvas.draw_idle()
         self.figure3.axes.clear()
         self.figure3.axes.plot(x, y, color="blue")
@@ -1477,6 +1770,10 @@ class main(QMainWindow):
         self.figure.axes.clear()
         self.figure2.fig.canvas.draw_idle()
         self.figure2.axes.clear()
+        self.figure6.fig.canvas.draw_idle()
+        self.figure6.axes.clear()
+        self.figure7.fig.canvas.draw_idle()
+        self.figure7.axes.clear()
         self.figure5.fig.canvas.draw_idle()
         self.figure5.axes.clear()
         # 跳转Tab
@@ -1484,9 +1781,11 @@ class main(QMainWindow):
         # self.FigtabWidget.setCurrentIndex(self.tabWidget.currentIndex())
         for filename in filenames:
             filetext += filename + ","
-            if ((self.data.filelist[filename].paras["指数拟合"] == []) and (
-                    self.data.filelist[filename].paras["双曲线拟合"] == [])):
-                continue
+
+            # if ((self.data.filelist[filename].paras["指数拟合"] == []) and (
+            #         self.data.filelist[filename].paras["双曲线拟合"] == [])):
+            #     continue
+
             # if(self.data.filelist[filename].paras["双曲线拟合"]==[]):
             #     if(self.data.filelist[filename].paras["指数拟合"]==[]):
             #         pass
@@ -1512,7 +1811,25 @@ class main(QMainWindow):
                 numend2 = len(self.data.filelist[filename].Pro_Data1) - 1
                 numendspot2 = 0
 
-            # 原始曲线
+            if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
+                numstart3 = self.data.filelist[filename].paras["双曲线积分拟合"][num].cutstartnum1
+                numend3 = self.data.filelist[filename].paras["双曲线积分拟合"][num].cutendnum1
+                numendspot3 = self.data.filelist[filename].paras["双曲线积分拟合"][num].cutendnumspot1
+            else:
+                numstart3 = 0
+                numend3 = len(self.data.filelist[filename].Pro_Data1) - 1
+                numendspot3 = 0
+
+            if (self.data.filelist[filename].paras["指数积分拟合"] != []):
+                numstart4 = self.data.filelist[filename].paras["指数积分拟合"][num].cutstartnum1
+                numend4 = self.data.filelist[filename].paras["指数积分拟合"][num].cutendnum1
+                numendspot4 = self.data.filelist[filename].paras["指数积分拟合"][num].cutendnumspot1
+            else:
+                numstart4 = 0
+                numend4 = len(self.data.filelist[filename].Pro_Data1) - 1
+                numendspot4 = 0
+
+            # 原始曲线中段折线
             self.figure.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart1:numend1 + 1],
                                   self.data.filelist[filename].Pro_Data1[numstart1:numend1 + 1],
                                   label=filename + "文件前截" + str(numstart1) + "个点后截" + str(
@@ -1520,32 +1837,80 @@ class main(QMainWindow):
             self.figure2.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
                                    self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1],
                                    label=filename + "文件前截" + str(numstart1) + "个点后截" + str(
-                                       numendspot1) + "个点双曲线拟合图")  # 中段
+                                       numendspot2) + "个点双曲线拟合图")  # 中段
+
+            if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
+                self.figure6.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[numstart3:numend3 + 1],
+                                      self.data.filelist[filename].Pro_Data1[numstart3:numend3 + 1],
+                                      label=filename + "文件前截" + str(numstart3) + "个点后截" + str(
+                                          numendspot3) + "个点双曲线积分拟合图")  # 中段
+
+            if (self.data.filelist[filename].paras["指数积分拟合"] != []):
+                self.figure7.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[numstart4:numend4 + 1],
+                                       self.data.filelist[filename].Pro_Data1[numstart4:numend4 + 1],
+                                       label=filename + "文件前截" + str(numstart4) + "个点后截" + str(
+                                           numendspot4) + "个点指数积分拟合图")  # 中段
+
             self.figure5.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
                                    self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1],
                                    label=filename + "文件前截" + str(numstart1) + "个点后截" + str(numendspot1) + "原始曲线")  # 中段
 
+            #显示裁剪状态下 前段，后段的折线和散点
             if (self.showcut == 0):
+                #折线
                 self.figure.axes.plot(self.data.filelist[filename].Pro_Data1_X[0:numstart1 + 1],
                                       self.data.filelist[filename].Pro_Data1[0:numstart1 + 1], "--")  # 前半段
                 self.figure.axes.plot(self.data.filelist[filename].Pro_Data1_X[numend1:],
                                       self.data.filelist[filename].Pro_Data1[numend1:], "--", color="green")  # 后半段段
+
                 self.figure2.axes.plot(self.data.filelist[filename].Pro_Data1_X[0:numstart2 + 1],
                                        self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], "--")  # 前半段
                 self.figure2.axes.plot(self.data.filelist[filename].Pro_Data1_X[numend2:],
                                        self.data.filelist[filename].Pro_Data1[numend2:], "--")  # 后半段段
+                if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
+                    self.figure6.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[0:numstart3 + 1],
+                                           self.data.filelist[filename].Pro_Data1[0:numstart3 + 1], "--")  # 前半段
+
+                    self.figure6.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[numend3:],
+                                           self.data.filelist[filename].Pro_Data1[numend3:], "--")  # 后半段段
+
+                if (self.data.filelist[filename].paras["指数积分拟合"] != []):
+                    self.figure7.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[0:numstart4 + 1],
+                                           self.data.filelist[filename].Pro_Data1[0:numstart4 + 1], "--")  # 前半段
+                    self.figure7.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[numend4:],
+                                           self.data.filelist[filename].Pro_Data1[numend4:], "--")  # 后半段段
+
                 self.figure5.axes.plot(self.data.filelist[filename].Pro_Data1_X[0:numstart2 + 1],
                                        self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], "--")  # 前半段
                 self.figure5.axes.plot(self.data.filelist[filename].Pro_Data1_X[numend2:],
                                        self.data.filelist[filename].Pro_Data1[numend2:], "--")  # 后半段段
+
+                #散点
                 self.figure.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart1 + 1],
                                          self.data.filelist[filename].Pro_Data1[0:numstart1 + 1], alpha=0.3)  # 前半段
                 self.figure.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend1:],
                                          self.data.filelist[filename].Pro_Data1[numend1:], alpha=0.3)  # 后半段段
+
+
                 self.figure2.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart2 + 1],
                                           self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], alpha=0.3)  # 前半段
                 self.figure2.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend2:],
                                           self.data.filelist[filename].Pro_Data1[numend2:], alpha=0.3)  # 后半段段
+
+                if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
+                    self.figure6.axes.scatter(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[0:numstart3 + 1],
+                                             self.data.filelist[filename].Pro_Data1[0:numstart3 + 1], alpha=0.3)  # 前半段
+                    self.figure6.axes.scatter(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[numend3:],
+                                             self.data.filelist[filename].Pro_Data1[numend3:], alpha=0.3)  # 后半段段
+
+                if (self.data.filelist[filename].paras["指数积分拟合"] != []):
+                    self.figure7.axes.scatter(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[0:numstart4 + 1],
+                                              self.data.filelist[filename].Pro_Data1[0:numstart4 + 1], alpha=0.3)  # 前半段
+                    self.figure7.axes.scatter(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[numend4:],
+                                              self.data.filelist[filename].Pro_Data1[numend4:], alpha=0.3)  # 后半段段
+
+
+
                 self.figure5.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart2 + 1],
                                           self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], alpha=0.3)  # 前半段
                 self.figure5.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend2:],
@@ -1554,10 +1919,20 @@ class main(QMainWindow):
             # 原始散点
             self.figure.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart1:numend1 + 1],
                                      self.data.filelist[filename].Pro_Data1[numstart1:numend1 + 1], alpha=0.3)
+
             self.figure2.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
                                       self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], alpha=0.3)
+            if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
+                self.figure6.axes.scatter(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[numstart2:numend2 + 1],
+                                          self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], alpha=0.3)
+            if (self.data.filelist[filename].paras["指数积分拟合"] != []):
+                self.figure7.axes.scatter(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[numstart2:numend2 + 1],
+                                          self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], alpha=0.3)
+
             self.figure5.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
                                       self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], alpha=0.3)
+
+            #拟合曲线
             if (self.data.filelist[filename].paras["双曲线拟合"] != []):
                 self.figure.axes.plot(self.data.filelist[filename].paras["双曲线拟合"][num].fitx,
                                       self.data.filelist[filename].paras["双曲线拟合"][num].fity, color="red")
@@ -1573,6 +1948,7 @@ class main(QMainWindow):
                                            round(self.data.filelist[filename].paras["双曲线拟合"][num].para[3],
                                                  2)) + ",R2:" + str(
                                            round(self.data.filelist[filename].paras["双曲线拟合"][num].R2[0], 5)) + ")")
+
             if (self.data.filelist[filename].paras["指数拟合"] != []):
                 self.figure2.axes.plot(self.data.filelist[filename].paras["指数拟合"][num].fitx,
                                        self.data.filelist[filename].paras["指数拟合"][num].fity, color="red")
@@ -1586,18 +1962,53 @@ class main(QMainWindow):
                                            round(self.data.filelist[filename].paras["指数拟合"][num].para[2],
                                                  2)) + ",R2:" + str(
                                            round(self.data.filelist[filename].paras["指数拟合"][num].R2[0], 5)) + ")")
+
+            if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
+                self.figure6.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].fitx,
+                                      self.data.filelist[filename].paras["双曲线积分拟合"][num].fity, color="red")
+                self.figure5.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].fitx,
+                                       self.data.filelist[filename].paras["双曲线积分拟合"][num].fity,':', color="yellow",
+                                       label="双曲线积分拟合，参数(I0:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].para[0],
+                                                 2)) + ",τ:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].para[1],
+                                                 5)) + ",Γ:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].para[2],
+                                                 5)) + ",D:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].para[3],
+                                                 2)) + ",R2:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].R2[0], 5)) + ")")
+
+            if (self.data.filelist[filename].paras["指数积分拟合"] != []):
+                self.figure7.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].fitx,
+                                       self.data.filelist[filename].paras["指数积分拟合"][num].fity, color="red")
+                self.figure5.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].fitx,
+                                       self.data.filelist[filename].paras["指数积分拟合"][num].fity,'-.', color="orange",
+                                       label="指数积分拟合，参数(I0:" + str(
+                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].para[0],
+                                                 2)) + ",τ:" + str(
+                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].para[1],
+                                                 5)) + ",D:" + str(
+                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].para[2],
+                                                 2)) + ",R2:" + str(
+                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].R2[0], 5)) + ")")
+
+
+
             # self.figure.axes.scatter(self.data.filelist[filename].Cut_Data1_X,self.data.filelist[filename].Cut_Data1, alpha=0.3)
         filetext1 = filetext + "双曲线拟合图"
         filetext2 = filetext + "指数拟合图"
-        filetext3 = filetext + "双曲线拟合-指数拟合对比图"
+        filetext6 = filetext + "双曲线积分拟合图"
+        filetext7 = filetext + "指数积分拟合图"
+        filetext3 = filetext + "双曲线拟合-指数拟合对比图-双曲线积分拟合图-指数积分拟合对比图"
 
         self.figure.axes.legend()
         self.figure.axes.grid()
         self.figure.axes.set_ylabel(ylabel)
         self.figure.axes.set_xlabel(xlabel)
         self.figure.axes.set_title(filetext1)
-        print("filenames",filenames)
-        print("len(filenames)",len(filenames))
+        # print("filenames",filenames)
+        # print("len(filenames)",len(filenames))
         if (len(filenames) == 1):
             if (self.data.filelist[filename].paras["双曲线拟合"] == []):
                 self.imagen1Name=filenames[0]+"文件原始数据图(无拟合数据)"
@@ -1624,6 +2035,43 @@ class main(QMainWindow):
                     self.data.filelist[filenames[0]].paras["指数拟合"][num].cutendnum1) + "指数拟合图"
         else:
             self.imagen2Name = filetext2
+
+
+        self.figure6.axes.legend()
+        self.figure6.axes.grid()
+        self.figure6.axes.set_ylabel(ylabel)
+        self.figure6.axes.set_xlabel(xlabel)
+        self.figure6.axes.set_title(filetext6)
+
+        # self.figure5.axes.set_title(filetext2)
+        if (len(filenames) == 1):
+            if (self.data.filelist[filename].paras["双曲线积分拟合"] == []):
+                self.imagen6Name=filenames[0]+"文件原始数据图(无拟合数据)"
+            else:
+                self.imagen6Name = filenames[0] + "文件前截" + str(
+                    self.data.filelist[filenames[0]].paras["双曲线积分拟合"][num].cutstartnum1) + "后截" + str(
+                    self.data.filelist[filenames[0]].paras["双曲线积分拟合"][num].cutendnum1) + "双曲线积分拟合图"
+        else:
+            self.imagen6Name = filetext6
+
+
+
+        self.figure7.axes.legend()
+        self.figure7.axes.grid()
+        self.figure7.axes.set_ylabel(ylabel)
+        self.figure7.axes.set_xlabel(xlabel)
+        self.figure7.axes.set_title(filetext7)
+
+        # self.figure5.axes.set_title(filetext2)
+        if (len(filenames) == 1):
+            if (self.data.filelist[filename].paras["指数积分拟合"] == []):
+                self.imagen7Name=filenames[0]+"文件原始数据图(无拟合数据)"
+            else:
+                self.imagen7Name = filenames[0] + "文件前截" + str(
+                    self.data.filelist[filenames[0]].paras["指数积分拟合"][num].cutstartnum1) + "后截" + str(
+                    self.data.filelist[filenames[0]].paras["指数积分拟合"][num].cutendnum1) + "指数积分拟合图"
+        else:
+            self.imagen7Name = filetext7
 
         self.figure5.axes.legend()
         self.figure5.axes.grid()
@@ -1718,6 +2166,8 @@ class main(QMainWindow):
         self.b2top[2] = text
         self.data.b2top[2] = text
 
+    def Table2verticalScrollbarvaluechanged(self,index):
+        self.data.Table2verticalScrollindex=index
 
     # def updatepath(self,path):
     #     print("path0")
@@ -1742,18 +2192,21 @@ class main(QMainWindow):
         self.progressBar.setValue(num)
         # print("更新进度条end")
     def updateData(self,data):
-        print( "updateData in ")
-        print(self.data)
-        print(data)
+        # print( "updateData in ")
+        # print(self.data)
+        # print(data)
         self.data=data
         # if isdone==True:
         # self.data=data
-        print("数据更新")
+        # print("数据更新")
         self.Table1.clear()
         self.Table2.clear()
+
         self.Table3.clear()
         self.Table4.clear()
         self.Table5.clear()
+        self.Table8.clear()
+        self.Table9.clear()
         i = 0
         self.Table2.setRowCount(len(self.data.filelist))
         # self.Table2.setColumnCount(self.data.maxCol+4)
@@ -1777,8 +2230,8 @@ class main(QMainWindow):
             self.Table2.setItem(i, 0, QTableWidgetItem(key))
             self.Table2.setItem(i, 1,
                                 QTableWidgetItem(self.data.filelist[key].ACQ_Time.strftime('%Y-%m-%d  %H:%M:%S.%f')))
-            self.Table2.setItem(i, 2, QTableWidgetItem(str(self.data.filelist[key].Min)))
-            self.Table2.setItem(i, 3, QTableWidgetItem(str(self.data.filelist[key].Max)))
+            self.Table2.setItem(i, 2, QTableWidgetItem(str(self.data.filelist[key].Max)))
+            self.Table2.setItem(i, 3, QTableWidgetItem(str(self.data.filelist[key].Min)))
             self.Table2.setItem(i, 4, QTableWidgetItem(str(len(self.data.filelist[key].Pro_Data1))))
 
             self.Table6.setItem(i, 0, QTableWidgetItem(key))
@@ -1804,24 +2257,34 @@ class main(QMainWindow):
         self.Table2.clear()
         self.Table2.setRowCount(len(self.data.filelist))
         # self.Table2.setColumnCount(4+14)
-        self.Table2.setColumnCount(20)
         i = 0
         # title2=["文件名","ACQ_Time","(双曲线)I_0", "(双曲线)τ", "(双曲线)Γ", "(双曲线)D","(指数)I_0", "(指数)τ", "(指数)D","(双曲线积分)I_0", "(双曲线积分)τ", "(双曲线积分)Γ", "(双曲线)D","(指数积分)I_0", "(指数积分)τ", "(指数)D"]
-        title2 = ["文件名", "ACQ_Time", "Max(原始)", "数据量", "双曲Max", "双曲前截", "双曲后截", "(双曲)R_square", "(双曲)I_0", "(双曲)τ",
-                  "(双曲)Γ", "(双曲)D", "(双曲)τ/Γ", "指数Max", "指数前截", "指数后截", "(指数)R_square", "(指数)I_0", "(指数)τ", "(指数)D"]
+        title2 = ["文件名", "ACQ_Time", "Max(原始)", "数据量", "双曲Max","双曲拟合权重", "双曲前截", "双曲后截", "(双曲)R_square", "(双曲)I_0", "(双曲)τ",
+                  "(双曲)Γ", "(双曲)D", "(双曲)τ/Γ", "指数Max", "指数拟合权重","指数前截", "指数后截", "(指数)R_square", "(指数)I_0", "(指数)τ", "(指数)D",
+                  "双曲积分Max","双曲积分拟合权重", "双曲积分前截", "双曲积分后截", "(双曲积分)R_square", "(双曲积分)I_0", "(双曲积分)τ",
+                  "(双曲积分)Γ", "(双曲积分)D", "(双曲积分)τ/Γ", "指数积分Max", "指数积分拟合权重","指数积分前截", "指数积分后截", "(指数积分)R_square", "(指数积分)I_0", "(指数积分)τ", "(指数积分)D"]
+        self.Table2.setColumnCount(len(title2))
         self.Table2.setHorizontalHeaderLabels(title2)
 
         for key, value in self.data.filelist.items():
             row = []
             if (value.paras["双曲线拟合"] != []):
                 row.append(value.paras["双曲线拟合"][-1].Max)
+
+                if value.paras["双曲线拟合"][-1].fitweightindex == 1:
+                    row.append(str("1/y"))
+                elif value.paras["双曲线拟合"][-1].fitweightindex == 2:
+                    row.append(str("子矩阵方差"))
+                else:
+                    row.append(str("1"))
                 row.append(value.paras["双曲线拟合"][-1].cutstartnumspot1)
                 row.append(value.paras["双曲线拟合"][-1].cutendnumspot1)
                 row.append(value.paras["双曲线拟合"][-1].R2[0])
                 for t in range(4):
-                    row.append(value.paras["双曲线拟合"][-1].para[t])
+                    row.append(str(round(value.paras["双曲线拟合"][-1].para[t],3))+"±"+str(round(abs(value.paras["双曲线拟合"][-1].para_error[t]),5)))
                 row.append(value.paras["双曲线拟合"][-1].para[1] / value.paras["双曲线拟合"][-1].para[2])
             else:
+                row.append("")
                 row.append("")
                 row.append("")
                 row.append("")
@@ -1834,11 +2297,17 @@ class main(QMainWindow):
 
             if (value.paras["指数拟合"] != []):
                 row.append(value.paras["指数拟合"][-1].Max)
+                if value.paras["指数拟合"][-1].fitweightindex == 1:
+                    row.append(str("1/y"))
+                elif value.paras["指数拟合"][-1].fitweightindex == 2:
+                    row.append(str("子矩阵方差"))
+                else:
+                    row.append(str("1"))
                 row.append(value.paras["指数拟合"][-1].cutstartnumspot1)
                 row.append(value.paras["指数拟合"][-1].cutendnumspot1)
                 row.append(value.paras["指数拟合"][-1].R2[0])
                 for t in range(3):
-                    row.append(value.paras["指数拟合"][-1].para[t])
+                    row.append(str(round(value.paras["指数拟合"][-1].para[t],3))+"±"+str(round(abs(value.paras["指数拟合"][-1].para_error[t]),5)))
             else:
                 row.append("")
                 row.append("")
@@ -1847,26 +2316,95 @@ class main(QMainWindow):
                 row.append("")
                 row.append("")
                 row.append("")
+                row.append("")
+
+            if (value.paras["双曲线积分拟合"] != []):
+                row.append(value.paras["双曲线积分拟合"][-1].Max)
+
+                if value.paras["双曲线积分拟合"][-1].fitweightindex == 1:
+                    row.append(str("1/y"))
+                elif value.paras["双曲线积分拟合"][-1].fitweightindex == 2:
+                    row.append(str("子矩阵方差"))
+                else:
+                    row.append(str("1"))
+                row.append(value.paras["双曲线积分拟合"][-1].cutstartnumspot1)
+                row.append(value.paras["双曲线积分拟合"][-1].cutendnumspot1)
+                row.append(value.paras["双曲线积分拟合"][-1].R2[0])
+                for t in range(4):
+                    row.append(str(round(value.paras["双曲线积分拟合"][-1].para[t], 3)) + "±" + str(
+                        round(abs(value.paras["双曲线积分拟合"][-1].para_error[t]), 5)))
+                row.append(value.paras["双曲线积分拟合"][-1].para[1] / value.paras["双曲线积分拟合"][-1].para[2])
+            else:
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+
+            if (value.paras["指数积分拟合"] != []):
+                row.append(value.paras["指数积分拟合"][-1].Max)
+                if value.paras["指数积分拟合"][-1].fitweightindex == 1:
+                    row.append(str("1/y"))
+                elif value.paras["指数积分拟合"][-1].fitweightindex == 2:
+                    row.append(str("子矩阵方差"))
+                else:
+                    row.append(str("1"))
+                row.append(value.paras["指数积分拟合"][-1].cutstartnumspot1)
+                row.append(value.paras["指数积分拟合"][-1].cutendnumspot1)
+                row.append(value.paras["指数积分拟合"][-1].R2[0])
+                for t in range(3):
+                    row.append(str(round(value.paras["指数积分拟合"][-1].para[t], 3)) + "±" + str(
+                        round(abs(value.paras["指数积分拟合"][-1].para_error[t]), 5)))
+            else:
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+                row.append("")
+
+
             self.Table2.setItem(i, 0, QTableWidgetItem(key))
             self.Table2.setItem(i, 1, QTableWidgetItem(value.ACQ_Time.strftime('%Y-%m-%d  %H:%M:%S.%f')))
             self.Table2.setItem(i, 2, QTableWidgetItem(str(value.Max)))
             self.Table2.setItem(i, 3, QTableWidgetItem(str(len(value.Pro_Data1))))
             j = 4
             for para in row:
-                if (para != ""):
+                if not isinstance(para, str):
+                # if (para != "" and):
                     self.Table2.setItem(i, j, QTableWidgetItem(str(round(para, 4))))
                 else:
-                    self.Table2.setItem(i, j, QTableWidgetItem(str(para)))
+                    self.Table2.setItem(i, j, QTableWidgetItem(para))
+                    # self.Table2.setItem(i, j, QTableWidgetItem(str(para)))
                 j += 1
-            for k in range(4, 8):
+            for k in range(4, 9):
                 self.Table2.item(i, k).setBackground(QBrush(QColor(255, 193, 193)))
                 # self.Table2.item(i+7, k).setBackground(QBrush(QColor(240, 125, 125)))
-            for k in range(8, 13):
+            for k in range(9, 14):
                 self.Table2.item(i, k).setBackground(QBrush(QColor(205, 155, 155)))
                 # self.Table2.item(i+7, k).setBackground(QBrush(QColor(240, 125, 125)))
-            for k in range(13, 17):
+            for k in range(14, 19):
                 self.Table2.item(i, k).setBackground(QBrush(QColor(154, 255, 154)))
-            for k in range(17, 20):
+            for k in range(19, 22):
+                self.Table2.item(i, k).setBackground(QBrush(QColor(124, 205, 124)))
+
+            #积分拟合数据
+            for k in range(22, 27):
+                self.Table2.item(i, k).setBackground(QBrush(QColor(255, 193, 193)))
+                # self.Table2.item(i+7, k).setBackground(QBrush(QColor(240, 125, 125)))
+            for k in range(27, 32):
+                self.Table2.item(i, k).setBackground(QBrush(QColor(205, 155, 155)))
+                # self.Table2.item(i+7, k).setBackground(QBrush(QColor(240, 125, 125)))
+            for k in range(32, 37):
+                self.Table2.item(i, k).setBackground(QBrush(QColor(154, 255, 154)))
+            for k in range(37, 40):
                 self.Table2.item(i, k).setBackground(QBrush(QColor(124, 205, 124)))
             i += 1
 
@@ -1876,17 +2414,30 @@ class main(QMainWindow):
             # self.plotdata(self.fitComboBox.currentText()[(index + 1):])
         self.Table4.clear()
         self.Table5.clear()
+        self.Table8.clear()
+        self.Table9.clear()
         self.Table4.setColumnCount(0)
         self.Table5.setColumnCount(0)
+        self.Table8.setColumnCount(0)
+        self.Table9.setColumnCount(0)
         self.Table4.setRowCount(0)
         self.Table5.setRowCount(0)
+        self.Table8.setRowCount(0)
+        self.Table9.setRowCount(0)
+        if self.data.Table2selectrow!=-1:
+            self.Table2.scrollToItem(self.Table2.item(self.data.Table2verticalScrollindex, 0), QAbstractItemView.PositionAtTop)
+            self.Table2.verticalHeader().setCurrentIndex(self.Table2.model().index(self.data.Table2selectrow,0))
+            print("temp",self.data.Table2selectrow)
+            # self.Table2VerticalHeaderClick(self.data.Table2selectrow)
 
-    def updatareadhistory(self,data):
+
+
+    def updatareadhistory(self,data:datastruct):
         self.data=data
         self.fitComboBox.clear()
         self.fitComboBox.addItems(["批量拟合"])
         # self.inpath=
-        self.outpath = self.data.outpath + "/预处理后的数据"
+        self.outpath = self.data.outpath
         self.inLineEdit.blockSignals(True)
         self.inLineEdit.setText(self.data.inpath)
         self.inLineEdit.blockSignals(False)
@@ -1895,10 +2446,10 @@ class main(QMainWindow):
         self.outLineEdit.blockSignals(False)
         self.imagen1Name = self.data.imagen1Name
         self.imagen2Name = self.data.imagen2Name
-        self.imagen3Name = self.data.imagen3Name
-        self.imagen4Name = self.data.imagen4Name
-        print(self.data.cb1setChecked)
-        print(self.data.cb2setChecked)
+        self.imagen6Name = self.data.imagen6Name
+        self.imagen7Name = self.data.imagen7Name
+        # print(self.data.cb1setChecked)
+        # print(self.data.cb2setChecked)
         self.cb1.setChecked(bool(self.data.cb1setChecked))
         self.cb2.setChecked(bool(self.data.cb2setChecked))
         # self.figure.fig.canvas.draw_idle()
@@ -1934,6 +2485,7 @@ class main(QMainWindow):
         self.Table2H = self.data.Table2H
         self.showcutComboBox.setCurrentIndex(self.data.showcut)
         self.featurexComboBox.setCurrentIndex(self.data.featurex)
+        self.fitweightComboBox.setCurrentIndex(self.data.fitweightindex)
         # self.showcut = self.data.showcut
         # self.featurex = self.data.featurex
 
@@ -2013,7 +2565,7 @@ class main(QMainWindow):
         self.Table7.addItems(self.historydata)
 
     def provisible(self,isvisible):
-        print("更新进度条可见")
+        # print("更新进度条可见")
         self.progressBar.setVisible(isvisible)
         # print("更新进度条可见end")
 
@@ -2029,7 +2581,7 @@ class dragLineEdit(QLineEdit):
 
     def dropEvent(self, evn):
         filename = evn.mimeData().text().split("///")[1]
-        print(filename)
+        # print(filename)
         if (os.path.isdir(filename)):
             self.setText(filename)
         else:

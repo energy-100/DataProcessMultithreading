@@ -16,6 +16,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 import seaborn as sns
+from scipy.stats import poisson
 # sns.set_style("whitegrid")
 
 # sns.set_style("darkgrid", {"axes.facecolor": "0"})
@@ -66,7 +67,9 @@ class MatplotWidget1(FigureCanvas):
         self.axes.clear()
         # self.axes = self.fig.add_subplot(1, 1, 1)
         # pg=sns.lmplot(x_name,outcome,data,hue=z_name)
-        pg=sns.distplot(data,ax=self.axes)
+        # print(np.max(data)-np.min(data))
+        pg=sns.distplot(data,ax=self.axes,bins=int(max(data)-min(data)))
+        # pg=sns.distplot(data,ax=self.axes,bins=int(max(data)-min(data)),fit=poisson)
         #ax = plt.gca()
         #ax.legend(numpoints=1, fancybox=True, fontsize="small", )
         #self.axes.get_legend().draggable(True, update="loc")

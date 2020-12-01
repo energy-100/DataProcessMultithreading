@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/DataProcessMultithreading.iml" filepath="$PROJECT_DIR$/.idea/DataProcessMultithreading.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../SimpleGA-master/.idea/SimpleGA-master.iml" filepath="$PROJECT_DIR$/../SimpleGA-master/.idea/SimpleGA-master.iml" />
     </modules>
   </component>
 </project>

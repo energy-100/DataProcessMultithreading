@@ -69,6 +69,8 @@ def covdat2image(path):
 
 # getimage()
 # covdat2image('J:/WeChat Files/xq_15822315801/FileStorage/Image/2020-04')
-covdat2image('J:/WeChat Files/xq_15822315801/FileStorage/Image/2020-03')
+# covdat2image('J:/WeChat Files/xq_15822315801/FileStorage/Image/2020-03')
+# covdat2image('J:/WeChat Files/xq_15822315801/FileStorage/Image/2020-03')
+covdat2image('F:/xq/img/2020-05')
 # covdat2image('J:/WeChat Files/xq_15822315801/FileStorage/Image/Thumb/2019-08')
 # covdat2image('F:\用户图片\ENERGY-DESKTOP-B8B3U7T')

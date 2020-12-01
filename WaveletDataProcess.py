@@ -59,7 +59,7 @@ maxtime = mintime + len(datanoise) + 1
 plt.plot(datarec)
 # datarecdecon=scipy.signal.deconvolve(datarec,list2)
 datarecdecon=list(scipy.signal.deconvolve(datarec,list2)[0])
-datarecdecon=scipy.signal.wiener(datarec,noise=list2)
+# datarecdecon=scipy.signal.wiener(datarec,noise=list2)
 # print(datarecdecon)
 # print(len(scipy.signal.deconvolve(datarec,list2)))
 print('data',datarecdecon)

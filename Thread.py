@@ -38,6 +38,33 @@ class readthread(QThread):
         self.sinOutoutEndThread.emit(self.data)
         print("传送结束！")
 
+class getMeanthread(QThread):
+    # print("启动拟合线程...")
+    sinOutpro = pyqtSignal(float)
+    sinOuttext = pyqtSignal(str)
+    sinOutbool = pyqtSignal(bool)
+    # sinOutpro = pyqtSignal(float)
+    # sinOuttext = pyqtSignal(str)
+    # sinOutbool = pyqtSignal(bool)
+    # sinOutinlinebool = pyqtSignal(bool)
+    # sinOutoutlinebool = pyqtSignal(bool)
+    # sinOutinlinetext = pyqtSignal(str)
+    # sinOutoutlinetext = pyqtSignal(str)
+    # sinOutoutfitEndThread = pyqtSignal(datastruct)
+    sinOutoutfitEndThread = pyqtSignal()
+
+    # sinOutoutpath = pyqtSignal(str)
+    # sinOutoutData = pyqtSignal(dataclass)
+    def __init__(self, data):
+        self.data = data
+        super(getMeanthread, self).__init__()
+    def run(self):
+        print("get mean data")
+        Process = dataProcess(self.sinOutpro, self.sinOuttext, self.sinOutbool)
+        Process.data = self.data
+        Process.getMeanData()
+        self.sinOutoutfitEndThread.emit()
+
 class readhistory(QThread):
     sinOuttext = pyqtSignal(str)
     sinOutoutEndThread = pyqtSignal(datastruct)
@@ -69,9 +96,9 @@ class savehistory(QThread):
         try:
             with open(filename, "wb") as file:
                 pickle.dump(self.data, file, True)
-            with open(filename, "rb") as file:
-                data1 = pickle.load(file)
-            print(data1)
+            # with open(filename, "rb") as file:
+            #     data1 = pickle.load(file)
+            # print(data1)
         except Exception as a:
             print(a)
         print("保存缓存")
@@ -85,7 +112,7 @@ class savehistory(QThread):
         self.sinOuttext.emit("当前状态保存成功!")
 
 class fitthread(QThread):
-    print("启动拟合线程...")
+    # print("启动拟合线程...")
     sinOutpro = pyqtSignal(float)
     sinOuttext = pyqtSignal(str)
     sinOutbool = pyqtSignal(bool)
@@ -112,7 +139,7 @@ class fitthread(QThread):
         Process.data=self.data
         for para in self.paras:
             Process.Fitting(para[0], para[1], para[2], para[3], para[4], para[5], para[6],
-                              para[7], para[8])
+                              para[7], para[8],para[9])
         self.sinOutoutfitEndThread.emit()
 
 class savefilethread(QThread):
@@ -266,7 +293,6 @@ class login(QThread):
             finally:
                 db.close()
             # 关闭数据库连接
-
 
 class getuserinf(QThread):
     def __init__(self):
