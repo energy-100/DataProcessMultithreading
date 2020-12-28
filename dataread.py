@@ -1346,6 +1346,7 @@ class dataProcess():
             data.Interval_per_Gate = int(datapar[16].strip(datapar[16].split(": ")[0]).strip(": "))
             datanum = int(data.Repeat_Times * data.Count_Num_per_gate) #每门数据量（包含重复测量数据）
             data.Pro_Data1 = np.zeros(data.Acq_Gate_Times * data.Count_Num_per_gate).tolist()#不重复情况下所有数据数量（门数*每门测量次数）
+            data.Pro_mal1=[[] for i in range(data.Acq_Gate_Times * data.Count_Num_per_gate)]#不重复情况下所有数据数量（门数*每门测量次数）
             # print("okkk")
             # print(datapar[17])
             # print(datapar[17].strip(datapar[17].split(":")[0]).strip(":"))
@@ -1355,7 +1356,7 @@ class dataProcess():
                 # print("进入")
                 data.Channel_Number = "1"
                 for i in range(18, 18 + datanum * data.Acq_Gate_Times):
-                    data.Raw_Data1.append(int(datapar[i]))
+                    data.Raw_Data1.append(float(datapar[i]))
                 # if (data.Channel_Number == 2):
                 #     for i in range(18 + datanum + 1,
                 #                    18 + datanum * data.Acq_Gate_Times + 1 + datanum * data.Acq_Gate_Times):
@@ -1363,7 +1364,7 @@ class dataProcess():
             else:
                 data.Channel_Number = int(datapar[17].strip(datapar[17].split(": ")[0]).strip(": "))
                 for i in range(19, 19 + datanum * data.Acq_Gate_Times):
-                    data.Raw_Data1.append(int(datapar[i]))
+                    data.Raw_Data1.append(float(datapar[i]))
                 # if (data.Channel_Number == 2):
                 #     for i in range(19 + datanum + 1,
                 #                    19 + datanum * data.Acq_Gate_Times + 1 + datanum * data.Acq_Gate_Times):
@@ -1408,7 +1409,7 @@ class dataProcess():
                     for k in range(int(data.Repeat_Times)):
                         ncps += data.Raw_Data1[k * data.Count_Num_per_gate + j + i * datanum]   #每秒光子数（50次测量均值）
                         ncpslist.append(data.Raw_Data1[k * data.Count_Num_per_gate + j + i * datanum])
-                    data.Pro_mal1.append(ncpslist)
+                    data.Pro_mal1[j * data.Acq_Gate_Times + i]=ncpslist
                     data.Pro_Data1[j * data.Acq_Gate_Times + i] = ncps * dScale
             # data.Interval=float((data.Gate_Time)/len(data.Pro_Data1))*data.Count_Num_per_gate*0.001
             data.Interval = float(data.Gate_Time / data.Count_Num_per_gate)
@@ -1452,8 +1453,108 @@ class dataProcess():
         self.sinOuttext.emit("数据转换成功！")
         return self.data
 
+    def readsinglefile(self,filepath,filename):
+        self.sinOuttext.emit("正在读取文件...")
+
+        data = dataclass()
+        data.filepath = filepath
+        datarow = open(filepath + '/' + filename)  # 读取的整个原始文件数据
+        datarowlines = datarow.readlines()  # 读取的整个原始文件的数据，按行分割
+        datapar = []  # 真正的每行数据数组
+        for line in datarowlines:
+            linenew = line.strip()
+            if (linenew != ""):
+                datapar.append(linenew)
+
+        temptime = re.search("\d{4}-\s*\d{1,2}-\s*\d{1,2}\s*\d{1,2}:\s*\d{1,2}:\s*\d{1,2}.\s*\d{1,3}\s*.",
+                             datapar[1]).group(0)
+
+        timelist = re.split('[- :.]\s*', temptime)
+
+        timestr = timelist[0] + "-" + timelist[1] + "-" + timelist[2] + "  " + timelist[3] + ":" + timelist[
+            4] + ":" + timelist[5] + "." + timelist[6]
+        data.ACQ_Time = datetime.strptime(timestr, '%Y-%m-%d  %H:%M:%S.%f')
+        data.Project = datapar[2].strip(datapar[2].split(": ")[0]).strip(": ")
+        data.Name = datapar[3].strip(datapar[3].split(": ")[0]).strip(": ")
+        data.part = datapar[4].strip(datapar[4].split(": ")[0]).strip(": ")
+        data.Operator = datapar[5].strip(datapar[5].split(": ")[0]).strip(": ")
+        data.Desc = datapar[6].strip(datapar[6].split(": ")[0]).strip(": ")
+        data.Excited_Peroid = int(datapar[9].strip(datapar[9].split(": ")[0]).strip(": "))
+        data.Excited_Time = int(datapar[10].strip(datapar[10].split(": ")[0]).strip(": "))
+        data.Acq_Delay_Time = int(datapar[11].strip(datapar[11].split(": ")[0]).strip(": "))
+        data.Gate_Time = int(datapar[12].strip(datapar[12].split(": ")[0]).strip(": "))
+        data.Count_Num_per_gate = int(datapar[13].strip(datapar[13].split(": ")[0]).strip(": "))
+        data.Repeat_Times = int(datapar[14].strip(datapar[14].split(": ")[0]).strip(": "))
+        data.Acq_Gate_Times = int(datapar[15].strip(datapar[15].split(": ")[0]).strip(": "))
+        data.Interval_per_Gate = int(datapar[16].strip(datapar[16].split(": ")[0]).strip(": "))
+        datanum = int(data.Repeat_Times * data.Count_Num_per_gate)  # 每门数据量（包含重复测量数据）
+        data.Pro_Data1 = np.zeros(data.Acq_Gate_Times * data.Count_Num_per_gate).tolist()  # 不重复情况下所有数据数量（门数*每门测量次数）
+        data.Pro_mal1 = np.zeros(data.Acq_Gate_Times * data.Count_Num_per_gate).tolist()  # 不重复情况下所有数据数量（门数*每门测量次数）
+
+
+        # 保存原始数据
+        if (datapar[17].strip(datapar[17].split(":")[0]).strip(":") == ""):
+            # print("进入")
+            data.Channel_Number = "1"
+            for i in range(18, 18 + datanum * data.Acq_Gate_Times):
+                data.Raw_Data1.append(float(datapar[i]))
+
+        else:
+            data.Channel_Number = int(datapar[17].strip(datapar[17].split(": ")[0]).strip(": "))
+            for i in range(19, 19 + datanum * data.Acq_Gate_Times):
+                data.Raw_Data1.append(float(datapar[i]))
+
+        dScale = data.Count_Num_per_gate * 1000 / (data.Gate_Time * data.Repeat_Times)
+        for i in range(int(data.Acq_Gate_Times)):
+            for j in range(int(data.Count_Num_per_gate)):
+                ncps = 0
+                ncpslist = []
+                for k in range(int(data.Repeat_Times)):
+                    ncps += data.Raw_Data1[k * data.Count_Num_per_gate + j + i * datanum]  # 每秒光子数（50次测量均值）
+                    ncpslist.append(data.Raw_Data1[k * data.Count_Num_per_gate + j + i * datanum])
+                data.Pro_mal1[j * data.Acq_Gate_Times + i] = ncpslist
+                data.Pro_Data1[j * data.Acq_Gate_Times + i] = ncps * dScale
+        # data.Interval=float((data.Gate_Time)/len(data.Pro_Data1))*data.Count_Num_per_gate*0.001
+        data.Interval = float(data.Gate_Time / data.Count_Num_per_gate)
+        data.mal1MES = [np.std(tmplist, ddof=1) for tmplist in data.Pro_mal1]
+        # print(data.Pro_Data1)
+
+        # print("data.Interval",data.Interval)
+
+        # for i in range(len(data.Pro_Data1)):
+        #     data.Pro_Data1_X.append(round(i*data.Interval,5))
+        #
+
+        for i in range(int(data.Count_Num_per_gate)):
+            for j in range(int(data.Acq_Gate_Times)):
+                data.Pro_Data1_X.append(float(i * data.Interval + j * data.Interval_per_Gate * 0.001))
+        # print(data.Interval)
+        # print(data.Pro_Data1_X)
+
+        # print(data.Pro_Data1)
+        data.Max = np.max(data.Pro_Data1)
+        data.Min = np.min(data.Pro_Data1)
+        if (data.Max == 0):
+            self.sinOuttext.emit("数据最大值=0 读取失败！")
+            return
+        data.cutendnum1 = len(data.Pro_Data1) - 1
+        # 复制原始数据到Cut
+        data.Cut_Data1 = copy.deepcopy(data.Pro_Data1)
+        data.Cut_Data1_X = copy.deepcopy(data.Pro_Data1_X)
+        data.Pro_Data1_variety_X = copy.deepcopy(data.Pro_Data1_X)
+        if (len(data.Cut_Data1) > self.data.maxCol):
+            self.data.maxCol = len(data.Cut_Data1)
+        # print("data.Cut_Data1",data.Cut_Data1)
+        self.data.filenames.append(filename)
+        self.data.filelist[filename] = data
+        self.sinOuttext.emit("文件读取成功！")
+
     def getMeanData(self):
         # newdata = dataclass()
+        self.sinOuttext.emit("正在计算...")
+        print(os.path.split(self.data.inpath)[1] + "-整体均值数据")
+        if 'error'!=self.data.filelist.pop(os.path.split(self.data.inpath)[1] + "-整体均值数据",'error'):
+            self.data.filenames.remove(os.path.split(self.data.inpath)[1] + "-整体均值数据")
         if(len(self.data.filelist)==0):
             self.sinOuttext.emit("数据总数为0，无法计算！")
             return
@@ -1461,54 +1562,78 @@ class dataProcess():
             if(len(self.data.filelist[self.data.filenames[i]].Pro_Data1)!=len(self.data.filelist[self.data.filenames[i]].Pro_Data1)):
                 self.sinOuttext.emit("数据格式不统一，无法计算！")
                 return
-        newdata=copy.deepcopy(self.data.filelist[self.data.filenames[0]])
-        new_Raw_Data1=[None] * len(self.data.filelist[self.data.filenames[0]].Raw_Data1)
+
+        standarddata = self.data.filelist[self.data.filenames[0]]
+        datagroup=[[] for i in range(len(standarddata.Pro_Data1))]
+
+        for key,data in self.data.filelist.items():
+            for i in range(standarddata.Acq_Gate_Times):
+                startindex=i*standarddata.Repeat_Times*standarddata.Count_Num_per_gate
+                endindex=(i+1)*standarddata.Repeat_Times*standarddata.Count_Num_per_gate
+                datagroup[i].extend(data.Raw_Data1[startindex:endindex])
+        txtdata=[]
+        for data in datagroup:
+            txtdata.extend(data)
+
         new_filename=os.path.split(self.data.inpath)[1]+"-整体均值数据"
-        for i in range(len(self.data.filelist[self.data.filenames[0]].Raw_Data1)): #原始数据点数
-            new_Raw_Data1[i]=np.mean([self.data.filelist[self.data.filenames[j]].Raw_Data1[i] for j in range(len(self.data.filenames))])
         #生成txt文件
         try:
             with open(self.data.inpath+"/"+new_filename+".txt", "w") as file:  # ”w"代表着每次运行都覆盖内容
                 file.write("Project Info:" + "\n\n")
                 file.write("    ACQ Time: " +datetime.now().strftime('%Y-%m-%d  %H:%M:%S.%f .')+ "\n\n")
                 file.write("    Project: " + new_filename+"\n\n")
-                file.write("    Name: " + str(newdata.Name)+"\n\n")
-                file.write("    Part: " + str(newdata.part)+"\n\n")
-                file.write("    Operator:  " +str(newdata.Operator)+ "\n\n")
-                file.write("    Desc.:  " +str(newdata.Desc)+ "\n\n")
+                file.write("    Name: " + str(standarddata.Name)+"\n\n")
+                file.write("    Part: " + str(standarddata.part)+"\n\n")
+                file.write("    Operator:  " +str(standarddata.Operator)+ "\n\n")
+                file.write("    Desc.:  " +str(standarddata.Desc)+ "\n\n")
                 file.write("    Sample Data Acquired."+"\n\n\n\n")
                 file.write("ACQ Parameters:" + "\n\n")
-                file.write("    Excited Peroid(ms): " +str(newdata.Excited_Peroid)+ "\n\n")
-                file.write("    Excited Time(ms): " +str(newdata.Excited_Time)+ "\n\n")
-                file.write("    Acq Delay Time(us): " +str(newdata.Acq_Delay_Time)+ "\n\n")
-                file.write("    Gate Time(ms): " +str(newdata.Gate_Time)+ "\n\n")
-                file.write("    Count Num per gate: " +str(newdata.Count_Num_per_gate)+ "\n\n")
-                file.write("    Repeat Times: " +str(newdata.Repeat_Times)+ "\n\n")
-                file.write("    Acq Gate Times: " +str(newdata.Acq_Gate_Times)+ "\n\n")
-                file.write("    Interval per Gate(us): " +str(newdata.Interval_per_Gate)+ "\n\n")
-                file.write("    Channel Number: " +str(newdata.Channel_Number)+ "\n\n\n\n")
+                file.write("    Excited Peroid(ms): " +str(standarddata.Excited_Peroid)+ "\n\n")
+                file.write("    Excited Time(ms): " +str(standarddata.Excited_Time)+ "\n\n")
+                file.write("    Acq Delay Time(us): " +str(standarddata.Acq_Delay_Time)+ "\n\n")
+                file.write("    Gate Time(ms): " +str(standarddata.Gate_Time)+ "\n\n")
+                file.write("    Count Num per gate: " +str(standarddata.Count_Num_per_gate)+ "\n\n")
+                file.write("    Repeat Times: " +str(standarddata.Repeat_Times*len(self.data.filelist))+ "\n\n")
+                file.write("    Acq Gate Times: " +str(standarddata.Acq_Gate_Times)+ "\n\n")
+                file.write("    Interval per Gate(us): " +str(standarddata.Interval_per_Gate)+ "\n\n")
+                file.write("    Channel Number: " +str(standarddata.Channel_Number)+ "\n\n\n\n")
                 file.write("Data:\n\n")
-                for i in range(len(new_Raw_Data1)):
-                    file.write("    "+str(int(new_Raw_Data1[i]+0.5))+"\n\n")
-        except Exeption as e:
+                for i in range(len(txtdata)):
+                    file.write("    "+str(int(txtdata[i]))+"\n\n")
+        except Exception as e:
             self.sinOuttext.emit("均值文件导出失败！(文件被占用，请关闭关闭文件后重试)")
 
-        for i in range(len(self.data.filelist[self.data.filenames[0]].Pro_Data1)): #数据点数
-            Pro_Data1_tmp = []
-            for j in range(len(self.data.filenames)):
-                Pro_Data1_tmp.extend(self.data.filelist[self.data.filenames[j]].Pro_mal1[i])
-            newdata.Pro_Data1[i]=np.mean(Pro_Data1_tmp)*newdata.Count_Num_per_gate * 1000 / (newdata.Gate_Time)
-            newdata.mal1MES[i] = np.std(Pro_Data1_tmp, ddof=1)
-            newdata.Pro_mal1[i]=Pro_Data1_tmp
-            # data.Pro_Data1[i]=np.mean([self.data.filelist[self.data.filenames[j]].Pro_Data1[i] for j in range(len(self.data.filenames))])
-        newdata.Max = np.max(newdata.Pro_Data1)
-        newdata.Min = np.min(newdata.Pro_Data1)
-        newdata.Cut_Data1 = copy.deepcopy(newdata.Pro_Data1)
-        newdata.Cut_Data1_X = copy.deepcopy(newdata.Pro_Data1_X)
-        newdata.Pro_Data1_variety_X = copy.deepcopy(newdata.Pro_Data1_X)
-        self.data.filenames.append(os.path.split(self.data.inpath)[1]+"-整体均值数据")
-        self.data.filelist[os.path.split(self.data.inpath)[1]+"-整体均值数据"] = newdata
-        self.sinOuttext.emit("整体均值数据计算成功！")
+
+
+
+
+
+
+        # #生成结构
+        # newdata=copy.deepcopy(self.data.filelist[self.data.filenames[0]])
+        # newdata.Repeat_Times=self.data.filelist[self.data.filenames[0]].Repeat_Times*len(self.data.filelist)
+        # newdata.mal1MES=[None] * len(self.data.filelist[self.data.filenames[0]].Pro_Data1)
+        # newdata.Pro_mal1=[None] * len(self.data.filelist[self.data.filenames[0]].Pro_Data1)
+        # for i in range(len(self.data.filelist[self.data.filenames[0]].Pro_Data1)): #数据点数
+        #     Pro_Data1_tmp = []
+        #     for j in range(len(self.data.filenames)):
+        #         Pro_Data1_tmp.extend(self.data.filelist[self.data.filenames[j]].Pro_mal1[i])
+        #         print(i)
+        #     newdata.ACQ_Time=datetime.now()
+        #     newdata.Pro_Data1[i]=np.mean(Pro_Data1_tmp)*newdata.Count_Num_per_gate * 1000 / (newdata.Gate_Time)
+        #     newdata.mal1MES[i] = np.std(Pro_Data1_tmp, ddof=1)
+        #     newdata.Pro_mal1[i]=Pro_Data1_tmp
+        #     # data.Pro_Data1[i]=np.mean([self.data.filelist[self.data.filenames[j]].Pro_Data1[i] for j in range(len(self.data.filenames))])
+        # newdata.Max = np.max(newdata.Pro_Data1)
+        # newdata.Min = np.min(newdata.Pro_Data1)
+        # newdata.Cut_Data1 = copy.deepcopy(newdata.Pro_Data1)
+        # newdata.Cut_Data1_X = copy.deepcopy(newdata.Pro_Data1_X)
+        # newdata.Pro_Data1_variety_X = copy.deepcopy(newdata.Pro_Data1_X)
+        # self.data.filenames.append(os.path.split(self.data.inpath)[1]+"-整体均值数据")
+        # self.data.filelist[os.path.split(self.data.inpath)[1]+"-整体均值数据"] = newdata
+        self.readsinglefile(self.data.inpath,new_filename+".txt")
+
+        self.sinOuttext.emit("整体均值数据计算成功！即将进行拟合操作...")
 
     def Fitting(self,funtype, method, startnum, endnum, filename, b1low, b1top, b2low, b2top,fitweightindex):
 
@@ -2458,12 +2583,20 @@ class dataProcess():
         xdata = workbook.add_worksheet("原始x轴数据")  # 预处理后的数据表
 
         cutdata1 = workbook.add_worksheet("(双曲线)裁剪后的数据")  # 预处理后的数据表
-        cutxdata1 = workbook.add_worksheet("双曲线裁剪x轴数据")  # 预处理后的数据表
-        cutdata1fit = workbook.add_worksheet("双曲线裁剪后拟合数据")  # 预处理后的数据表
+        cutxdata1 = workbook.add_worksheet("(双曲线)裁剪x轴数据")  # 预处理后的数据表
+        cutdata1fit = workbook.add_worksheet("(双曲线)裁剪后拟合数据")  # 预处理后的数据表
 
         cutdata2 = workbook.add_worksheet("(指数)裁剪后的数据")  # 预处理后的数据表
-        cutxdata2 = workbook.add_worksheet("指数裁剪x轴数据")  # 预处理后的数据表
-        cutdata2fit = workbook.add_worksheet("指数裁剪后拟合数据")  # 预处理后的数据表
+        cutxdata2 = workbook.add_worksheet("(指数)裁剪x轴数据")  # 预处理后的数据表
+        cutdata2fit = workbook.add_worksheet("(指数)裁剪后拟合数据")  # 预处理后的数据表
+
+        cutdata3 = workbook.add_worksheet("(双曲线积分)裁剪后的数据")  # 预处理后的数据表
+        cutxdata3 = workbook.add_worksheet("(双曲线积分)裁剪x轴数据")  # 预处理后的数据表
+        cutdata3fit = workbook.add_worksheet("(双曲线积分)裁剪后拟合数据")  # 预处理后的数据表
+
+        cutdata4 = workbook.add_worksheet("(指数积分)裁剪后的数据")  # 预处理后的数据表
+        cutxdata4 = workbook.add_worksheet("(指数积分)裁剪x轴数据")  # 预处理后的数据表
+        cutdata4fit = workbook.add_worksheet("(指数积分)裁剪后拟合数据")  # 预处理后的数据表
 
         inf = workbook.add_worksheet("文件信息")  # 预处理后的数据表
         # datamat = workbook.add_worksheet("子数据矩阵")  # 子数据矩阵表
@@ -2486,6 +2619,14 @@ class dataProcess():
         cutxdata2.write(0, 0, "文件名")
         cutxdata2.write(0, 1, "前截点数")
         cutxdata2.write(0, 2, "后截点数")
+
+        cutxdata3.write(0, 0, "文件名")
+        cutxdata3.write(0, 1, "前截点数")
+        cutxdata3.write(0, 2, "后截点数")
+
+        cutxdata4.write(0, 0, "文件名")
+        cutxdata4.write(0, 1, "前截点数")
+        cutxdata4.write(0, 2, "后截点数")
 
         # for i in range(len(self.filelist.)):
         #     Prodata.write(0, i+1, str(i+1))
@@ -2514,13 +2655,26 @@ class dataProcess():
         sheetpars.write(0, 21, "(指数)SSE")
         sheetpars.write(0, 22, "(指数)MSE")
         sheetpars.write(0, 23, "(指数)RMSE")
-        sheetpars.write(0, 24, "(双曲线积分)I_0")
-        sheetpars.write(0, 25, "(双曲线积分)τ")
-        sheetpars.write(0, 26, "(双曲线积分)Γ")
-        sheetpars.write(0, 27, "(双曲线)D")
-        sheetpars.write(0, 28, "(指数积分)I_0")
-        sheetpars.write(0, 29, "(指数积分)τ")
-        sheetpars.write(0, 30, "(指数)D")
+        sheetpars.write(0, 24, "(双曲积分)前截点")
+        sheetpars.write(0, 25, "(双曲积分)后截点")
+        sheetpars.write(0, 26, "(双曲线积分)I_0")
+        sheetpars.write(0, 27, "(双曲线积分)τ")
+        sheetpars.write(0, 28, "(双曲线积分)Γ")
+        sheetpars.write(0, 29, "(双曲线)D")
+        sheetpars.write(0, 30, "(双曲线)τ/Γ")
+        sheetpars.write(0, 31, "(双曲线)R_square")
+        sheetpars.write(0, 32, "(双曲线)SSE")
+        sheetpars.write(0, 33, "(双曲线)MSE")
+        sheetpars.write(0, 34, "(双曲线)RMSE")
+        sheetpars.write(0, 35, "(指数积分)前截点")
+        sheetpars.write(0, 36, "(指数积分)后截点")
+        sheetpars.write(0, 37, "(指数积分)I_0")
+        sheetpars.write(0, 38, "(指数积分)τ")
+        sheetpars.write(0, 39, "(指数)D")
+        sheetpars.write(0, 40, "(指数)R_square")
+        sheetpars.write(0, 41, "(指数)SSE")
+        sheetpars.write(0, 42, "(指数)MSE")
+        sheetpars.write(0, 43, "(指数)RMSE")
         
         sheetpars2.write(0, 0, "文件名")
         sheetpars2.write(0, 1, "Max(原始)")
@@ -2546,13 +2700,26 @@ class dataProcess():
         sheetpars2.write(0, 21, "(指数)SSE")
         sheetpars2.write(0, 22, "(指数)MSE")
         sheetpars2.write(0, 23, "(指数)RMSE")
-        sheetpars2.write(0, 24, "(双曲线积分)I_0")
-        sheetpars2.write(0, 25, "(双曲线积分)τ")
-        sheetpars2.write(0, 26, "(双曲线积分)Γ")
-        sheetpars2.write(0, 27, "(双曲线)D")
-        sheetpars2.write(0, 28, "(指数积分)I_0")
-        sheetpars2.write(0, 29, "(指数积分)τ")
-        sheetpars2.write(0, 30, "(指数)D")
+        sheetpars2.write(0, 24, "(双曲积分)前截点")
+        sheetpars2.write(0, 25, "(双曲积分)后截点")
+        sheetpars2.write(0, 26, "(双曲线积分)I_0")
+        sheetpars2.write(0, 27, "(双曲线积分)τ")
+        sheetpars2.write(0, 28, "(双曲线积分)Γ")
+        sheetpars2.write(0, 29, "(双曲线)D")
+        sheetpars2.write(0, 30, "(双曲线)τ/Γ")
+        sheetpars2.write(0, 31, "(双曲线)R_square")
+        sheetpars2.write(0, 32, "(双曲线)SSE")
+        sheetpars2.write(0, 33, "(双曲线)MSE")
+        sheetpars2.write(0, 34, "(双曲线)RMSE")
+        sheetpars2.write(0, 35, "(指数积分)前截点")
+        sheetpars2.write(0, 36, "(指数积分)后截点")
+        sheetpars2.write(0, 37, "(指数积分)I_0")
+        sheetpars2.write(0, 38, "(指数积分)τ")
+        sheetpars2.write(0, 39, "(指数)D")
+        sheetpars2.write(0, 40, "(指数)R_square")
+        sheetpars2.write(0, 41, "(指数)SSE")
+        sheetpars2.write(0, 42, "(指数)MSE")
+        sheetpars2.write(0, 43, "(指数)RMSE")
         
         
 
@@ -2564,7 +2731,7 @@ class dataProcess():
             sheetpars2.set_column(self.colnum_string(3), 28)
         except Exception as a:
             print(a)
-        for i in range(4, 30):
+        for i in range(4, 44):
             sheetpars.set_column(self.colnum_string(i), self.countlen("(双曲线积分)I_0"))
             sheetpars2.set_column(self.colnum_string(i), self.countlen("(双曲线积分)I_0"))
 
@@ -2647,30 +2814,91 @@ class dataProcess():
                     sheetpars2.write_number(i, j, t, bold22)
                     j += 1
             else:
-                j += 7
+                j =24
             # print("okk")
             if (value.paras["双曲线积分拟合"] != []):
-                for para in value.paras["双曲线积分拟合"][-1].para:
-                    if (para != ""):
-                        para = round(para, 3)
-                    sheetpars.write_number(i, j, para, bold3)
-                    sheetpars2.write_number(i, j, para, bold3)
+                # for para in value.paras["双曲线积分拟合"][-1].para:
+                #     if (para != ""):
+                #         para = round(para, 3)
+                #     sheetpars.write_number(i, j, para, bold3)
+                #     sheetpars2.write_number(i, j, para, bold3)
+                #     # print(para)
+                #     # print("拟合3")
+                #     j += 1
+
+                sheetpars.write_number(i, j, value.paras["双曲线积分拟合"][-1].cutstartnumspot1)
+                sheetpars.write_number(i, j+1, value.paras["双曲线积分拟合"][-1].cutendnumspot1)
+                sheetpars2.write_number(i, j, value.paras["双曲线积分拟合"][-1].cutstartnumspot1)
+                sheetpars2.write_number(i, j+1, value.paras["双曲线积分拟合"][-1].cutendnumspot1)
+
+                j += 2
+                for ii in range(len(value.paras["双曲线积分拟合"][-1].para)):
+                    para = value.paras["双曲线积分拟合"][-1].para[ii]
+                    para_error = value.paras["双曲线积分拟合"][-1].para_error[ii]
                     # print(para)
-                    # print("拟合3")
+                    # print("拟合1")
+                    if (para != ""):
+                        para = round(para, 5)
+                    if (para_error != ""):
+                        para_error = round(para_error, 5)
+
+                    sheetpars.write_number(i, j, para, bold1)
+                    sheetpars2.write(i, j, str(para) + "±" + str(para_error), bold1)
+                    j += 1
+                sheetpars.write_number(i, j,
+                                       round(value.paras["双曲线积分拟合"][-1].para[1] / value.paras["双曲线积分拟合"][-1].para[2], 5),
+                                       bold1)
+                sheetpars2.write_number(i, j,
+                                        round(value.paras["双曲线积分拟合"][-1].para[1] / value.paras["双曲线积分拟合"][-1].para[2], 5),
+                                        bold1)
+                j += 1
+                for r in value.paras["双曲线积分拟合"][-1].R2:
+                    if (r != ""):
+                        r = round(r, 5)
+                    sheetpars.write_number(i, j, r, bold12)
+                    sheetpars2.write_number(i, j, r, bold12)
                     j += 1
             else:
-                j += 8
+                j +=35
             if (value.paras["指数积分拟合"] != []):
-                for para in value.paras["指数积分拟合"][-1].para:
-                    if (para != ""):
-                        para = round(para, 3)
-                    sheetpars.write_number(i, j, para, bold4)
-                    sheetpars2.write_number(i, j, para, bold4)
+                # for para in value.paras["指数积分拟合"][-1].para:
+                #     if (para != ""):
+                #         para = round(para, 3)
+                #     sheetpars.write_number(i, j, para, bold4)
+                #     sheetpars2.write_number(i, j, para, bold4)
+                #     # print(para)
+                #     # print("拟合4")
+                #     j += 1
+
+                sheetpars.write_number(i, j, value.paras["指数积分拟合"][-1].cutstartnumspot1)
+                sheetpars.write_number(i, j + 1, value.paras["指数积分拟合"][-1].cutendnumspot1)
+
+                sheetpars2.write_number(i, j, value.paras["指数积分拟合"][-1].cutstartnumspot1)
+                sheetpars2.write_number(i, j + 1, value.paras["指数积分拟合"][-1].cutendnumspot1)
+
+                j += 2
+                for ii in range(len(value.paras["指数积分拟合"][-1].para)):
+                    para = value.paras["指数积分拟合"][-1].para[ii]
+                    para_error = value.paras["指数积分拟合"][-1].para_error[ii]
                     # print(para)
-                    # print("拟合4")
+                    # print("拟合2")
+                    if (para != ""):
+                        para = round(para, 5)
+                    if (para_error != ""):
+                        para_error = round(para_error, 5)
+                    sheetpars.write_number(i, j, para, bold2)
+                    sheetpars2.write(i, j, str(para) + "±" + str(para_error), bold2)
                     j += 1
+                for t in value.paras["指数积分拟合"][-1].R2:
+                    if (t != ""):
+                        t = round(t, 5)
+                        # print(t)
+                    sheetpars.write_number(i, j, t, bold22)
+                    sheetpars2.write_number(i, j, t, bold22)
+                    j += 1
+
             else:
-                j += 7
+                j = 44
 
             # 保存原始数据
             Prodata.write(i, 0, key)
@@ -2699,8 +2927,8 @@ class dataProcess():
                 cutdata2.write(i, 0, key)
                 cutdata2.set_column(self.colnum_string(0), filenamelen)
                 z = 1
-                print(value.cutstartnum1)
-                print(value.cutendnum1 + 1)
+                # print(value.cutstartnum1)
+                # print(value.cutendnum1 + 1)
                 cutdata2.write_number(i, z, value.paras["指数拟合"][-1].cutstartnumspot1)
                 cutdata2.write_number(i, z + 1, value.paras["指数拟合"][-1].cutendnumspot1)
                 z += 2
@@ -2709,6 +2937,35 @@ class dataProcess():
                     cutdata2.write_number(i, z, spot)
 
                     z += 1
+            if (value.paras["双曲线积分拟合"] != []):
+                cutdata3.write(i, 0, key)
+                cutdata3.set_column(self.colnum_string(0), filenamelen)
+                z = 1
+                # print(value.cutstartnum1)
+                # print(value.cutendnum1 + 1)
+                cutdata3.write_number(i, z, value.paras["双曲线积分拟合"][-1].cutstartnumspot1)
+                cutdata3.write_number(i, z + 1, value.paras["双曲线积分拟合"][-1].cutendnumspot1)
+                z += 2
+                for spot in value.Pro_Data1[
+                            value.paras["双曲线积分拟合"][-1].cutstartnum1:value.paras["双曲线积分拟合"][-1].cutendnum1 + 1]:
+                    cutdata3.write_number(i, z, spot)
+
+                    z += 1
+            if (value.paras["指数积分拟合"] != []):
+                cutdata4.write(i, 0, key)
+                cutdata4.set_column(self.colnum_string(0), filenamelen)
+                z = 1
+                # print(value.cutstartnum1)
+                # print(value.cutendnum1 + 1)
+                cutdata4.write_number(i, z, value.paras["指数积分拟合"][-1].cutstartnumspot1)
+                cutdata4.write_number(i, z + 1, value.paras["指数积分拟合"][-1].cutendnumspot1)
+                z += 2
+                for spot in value.Pro_Data1[
+                            value.paras["指数积分拟合"][-1].cutstartnum1:value.paras["指数积分拟合"][-1].cutendnum1 + 1]:
+                    cutdata4.write_number(i, z, spot)
+
+                    z += 1
+
             self.sinOutpro.emit(i / len(self.data.filelist) * 80)
 
 
@@ -2736,7 +2993,6 @@ class dataProcess():
 
                 z =3
                 for spot in value.paras["双曲线拟合"][-1].yfit:
-                    cutxdata1.write_number(i, z, spot)
                     cutdata1fit.write_number(i, z, spot)
                     z += 1
 
@@ -2746,7 +3002,6 @@ class dataProcess():
                             value.paras["双曲线拟合"][-1].cutstartnum1:value.paras["双曲线拟合"][-1].cutendnum1 + 1]:
                     cutxdata1.write_number(i, z, spot)
                     z += 1
-
 
             # 指数裁剪后x轴数据
             if (value.paras["指数拟合"] != []):
@@ -2772,8 +3027,58 @@ class dataProcess():
                             value.paras["指数拟合"][-1].cutstartnum1:value.paras["指数拟合"][-1].cutendnum1 + 1]:
                     cutxdata2.write_number(i, z, spot)
                     z += 1
-            i += 1
 
+            # 双曲线积分裁剪后x轴数据
+            if (value.paras["双曲线积分拟合"] != []):
+                cutxdata3.write(i, 0, key)
+                cutxdata3.set_column(self.colnum_string(0), filenamelen)
+
+                cutdata3fit.write(i, 0, key)
+                cutdata3fit.set_column(self.colnum_string(0), filenamelen)
+
+                cutxdata3.write_number(i, 1, value.paras["双曲线积分拟合"][-1].cutstartnumspot1)
+                cutxdata3.write_number(i, 2, value.paras["双曲线积分拟合"][-1].cutendnumspot1)
+
+                cutdata3fit.write_number(i, 1, value.paras["双曲线积分拟合"][-1].cutstartnumspot1)
+                cutdata3fit.write_number(i, 2, value.paras["双曲线积分拟合"][-1].cutendnumspot1)
+
+                z =3
+                for spot in value.paras["双曲线积分拟合"][-1].yfit:
+                    cutdata3fit.write_number(i, z, spot)
+                    z += 1
+
+
+                z =3
+                for spot in value.Pro_Data1_X[
+                            value.paras["双曲线积分拟合"][-1].cutstartnum1:value.paras["双曲线积分拟合"][-1].cutendnum1 + 1]:
+                    cutxdata3.write_number(i, z, spot)
+                    z += 1
+
+            # 指数积分裁剪后x轴数据
+            if (value.paras["指数积分拟合"] != []):
+                cutxdata4.write(i, 0, key)
+                cutxdata4.set_column(self.colnum_string(0), filenamelen)
+
+                cutdata4fit.write(i, 0, key)
+                cutdata4fit.set_column(self.colnum_string(0), filenamelen)
+
+                cutxdata4.write_number(i, 1, value.paras["指数积分拟合"][-1].cutstartnumspot1)
+                cutxdata4.write_number(i, 2, value.paras["指数积分拟合"][-1].cutendnumspot1)
+
+                cutdata4fit.write_number(i, 1, value.paras["指数积分拟合"][-1].cutstartnumspot1)
+                cutdata4fit.write_number(i, 2, value.paras["指数积分拟合"][-1].cutendnumspot1)
+
+                z =3
+                for spot in value.paras["指数积分拟合"][-1].yfit:
+                    cutdata4fit.write_number(i, z, spot)
+                    z += 1
+
+                z =3
+                for spot in value.Pro_Data1_X[
+                            value.paras["指数积分拟合"][-1].cutstartnum1:value.paras["指数积分拟合"][-1].cutendnum1 + 1]:
+                    cutxdata4.write_number(i, z, spot)
+                    z += 1
+            i += 1
 
 
 

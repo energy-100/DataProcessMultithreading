@@ -1,11 +1,9 @@
 import os
 from scipy.optimize import curve_fit
 import numpy as np
-
 filenames=[]
 
 import matplotlib.pyplot as plt
-plt.rc('font',family='Times New Roman')
 import matplotlib; matplotlib.use('TkAgg')
 
 class fun():
@@ -144,21 +142,13 @@ def plot(filepath):  # 存入数据
     print(R2)
     print(popt)
     print()
-    plt.figure(figsize=(20, 7))
-    matplotlib.rcParams.update({'font.size': 20})
-
-    plt.plot(Pro_Data1_X,Pro_Data1,c="blue",marker="o",linewidth=3.0, markersize=10,markeredgecolor="blue", markerfacecolor="none",label="Experimental data")
-    # plt.scatter(Pro_Data1_X,Pro_Data1,s=3,c="red",label="Experimental data")
-    plt.plot(xfit,yfit,c="red",label="The fitting curve",linewidth=3.0)
-    plt.xlabel("Delay time(ms)", fontsize=23)  # 设置x坐标标注，字体为18号
-    plt.ylabel("Photon intensity(CPS)", fontsize=23)  # 设置y坐标标注
-    # plt.title('测试某些函数')
-    plt.ticklabel_format(style='sci', axis='y', scilimits=(-4, 4))
-    plt.gca().ticklabel_format(useMathText=True)
+    plt.scatter(Pro_Data1_X,Pro_Data1,s=3,c="red")
+    plt.plot(xfit,yfit)
+    plt.xlabel('input number')
+    plt.ylabel('ouput number')
+    plt.title('测试某些函数')
     plt.legend()
-    plt.savefig('image3.png', dpi=600, bbox_inches='tight')
+    plt.show()
     plt.show()
 
-
-
-plot("D:/工作文件2/旋光/QCC2019 422 95229-手指发光-D.txt")
+plot("D:/工作文件2/QCC2019 422 95229-手指发光-D.txt")

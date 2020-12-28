@@ -7,7 +7,7 @@ import pickle
 import traceback
 if hasattr(sys, 'frozen'):
     os.environ['PATH'] = sys._MEIPASS + ";" + os.environ['PATH']
-from MyWidget import Mydemo,MatplotWidget1
+from MyWidget import Mydemo,MatplotWidget1,ComboCheckBox,CheckableComboBox
 from Thread import *
 from dataread import *
 # import qdarkstyle
@@ -36,7 +36,6 @@ class main(QMainWindow):
         self.b1top = [1.2, 1000, 1000, 1000000]
         self.b2low = [0.8, 0.1, 0]
         self.b2top = [1.2, 1000, 1000000]
-
         super(main, self).__init__(parent)
         self.setWindowTitle('人体延迟发光数据处理软件 V4.2(多线程版本)')
         self.setWindowIcon(QIcon('xyjk.png'))
@@ -288,6 +287,19 @@ class main(QMainWindow):
         self.label2 = QLabel("转换后的列表(按住ctrl选择多列或多行，右键选择复制类型)：")
         self.grid.addWidget(self.label2, 4, 0, 1, 10)
 
+        self.label4 = QLabel("选择要显示的列")
+        self.grid.addWidget(self.label4, 4, 4, 1, 1)
+
+        # ComboCheckBox
+        self.showComboCheckBox = CheckableComboBox()
+        self.showComboCheckBox.loadItems(["文件名", "ACQ_Time", "Max(原始)", "数据量", "双曲Max","双曲拟合权重", "双曲前截", "双曲后截", "(双曲)R_square", "(双曲)I_0", "(双曲)τ",
+                  "(双曲)Γ", "(双曲)D", "(双曲)τ/Γ", "指数Max", "指数拟合权重","指数前截", "指数后截", "(指数)R_square", "(指数)I_0", "(指数)τ", "(指数)D",
+                  "双曲积分Max","双曲积分拟合权重", "双曲积分前截", "双曲积分后截", "(双曲积分)R_square", "(双曲积分)I_0", "(双曲积分)τ",
+                  "(双曲积分)Γ", "(双曲积分)D", "(双曲积分)τ/Γ", "指数积分Max", "指数积分拟合权重","指数积分前截", "指数积分后截", "(指数积分)R_square", "(指数积分)I_0", "(指数积分)τ", "(指数积分)D"])
+
+        self.grid.addWidget(self.showComboCheckBox, 4, 5, 1, 2)
+        self.showComboCheckBox.sinOuttext.connect(self.showcolindexchanged)
+
         self.deletedataButton=QPushButton("移除选中数据")
         self.deletedataButton.clicked.connect(self.deletedataButtonclicked)
         self.grid.addWidget(self.deletedataButton, 4, 9, 1, 1)
@@ -310,6 +322,8 @@ class main(QMainWindow):
         self.Table2 = QTableWidget()
         self.Table2.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.Table2.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        # self.Table2.horizontalHeader().setResizeMode(QHeaderView.Interactive)
+        # self.Table2.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.Table2.horizontalHeader().sectionClicked.connect(self.Table2HorizontalHeaderClick)
         self.Table2.verticalScrollBar().valueChanged.connect(self.Table2verticalScrollbarvaluechanged)
 
@@ -409,16 +423,24 @@ class main(QMainWindow):
         self.savetabgrid.addWidget(self.saveImageButton2, 1, 0, 1, 1)
         self.saveImageButton2.clicked.connect(lambda: self.saveImage2Buttonlicked())
 
+        self.saveImageButton6 = QPushButton("保存双曲线积分图片")
+        self.savetabgrid.addWidget(self.saveImageButton6, 2, 0, 1, 1)
+        self.saveImageButton6.clicked.connect(lambda: self.saveImage6Buttonlicked())
+
+        self.saveImageButton7 = QPushButton("保存指数积分图片")
+        self.savetabgrid.addWidget(self.saveImageButton7, 3, 0, 1, 1)
+        self.saveImageButton7.clicked.connect(lambda: self.saveImage7Buttonlicked())
+
         self.saveImageButton3 = QPushButton("保存参数变化图片")
-        self.savetabgrid.addWidget(self.saveImageButton3, 2, 0, 1, 1)
+        self.savetabgrid.addWidget(self.saveImageButton3, 4, 0, 1, 1)
         self.saveImageButton3.clicked.connect(lambda: self.saveImage3Buttonlicked())
 
         self.saveImageButton4 = QPushButton("保存概率分布图片")
-        self.savetabgrid.addWidget(self.saveImageButton4, 3, 0, 1, 1)
+        self.savetabgrid.addWidget(self.saveImageButton4, 5, 0, 1, 1)
         # self.saveImageButton4.clicked.connect(lambda: self.saveImage4Buttonlicked())
 
-        self.saveImageButton5 = QPushButton("保存双曲-指数对比图")
-        self.savetabgrid.addWidget(self.saveImageButton5, 4, 0, 1, 1)
+        self.saveImageButton5 = QPushButton("保存多种拟合曲线对比图")
+        self.savetabgrid.addWidget(self.saveImageButton5, 6, 0, 1, 1)
         self.saveImageButton5.clicked.connect(lambda: self.saveImage5Buttonlicked())
 
         self.savefileButton = QPushButton("保存数据")
@@ -647,6 +669,7 @@ class main(QMainWindow):
                 self.inLineEdit.blockSignals(False)
                 # self.inpath = path
                 self.outpath = path + "/预处理后的数据"
+                self.data.outpath=self.outpath
                 self.outLineEdit.blockSignals(True)
                 self.outLineEdit.setText(self.outpath)
                 self.outLineEdit.blockSignals(False)
@@ -667,6 +690,7 @@ class main(QMainWindow):
         # path = "C:/Users/ENERGY/Desktop/工作文件/test"
         if path != "":
             self.outpath = path + "/预处理后的数据"
+            self.data.outpath=self.outpath
             self.outLineEdit.setText(self.outpath)
 
     def inLineEditfinished(self):
@@ -695,6 +719,7 @@ class main(QMainWindow):
                 self.inLineEdit.blockSignals(False)
                 # self.inpath = path
                 self.outpath = path + "/预处理后的数据"
+                self.data.outpath=self.outpath
                 self.outLineEdit.blockSignals(True)
                 self.outLineEdit.setText(self.outpath)
                 self.outLineEdit.blockSignals(False)
@@ -715,9 +740,11 @@ class main(QMainWindow):
 
         elif (os.path.exists(path + "/预处理后的数据.xls")):
             self.outpath = path
+            self.data.outpath=self.outpath
             self.statusBar().showMessage("文件已存在，若不想覆盖文件请更改文件保存路径")
         else:
             self.outpath = path + "/预处理后的数据.xls"
+            self.data.outpath = self.outpath
             self.statusBar().showMessage("已更改输出文件路径！")
 
     def Table2HorizontalHeaderClick(self, index):
@@ -853,13 +880,13 @@ class main(QMainWindow):
         self.Table3.setRowCount(1 + len(self.data.filelist[self.Table2.item(index, 0).text()].Pro_mal1[0]))
         self.Table3.setColumnCount(len(self.data.filelist[self.Table2.item(index, 0).text()].Pro_mal1))
         for i in range(len(self.data.filelist[filename].Pro_Data1)):
-            self.Table3.setItem(0, i, QTableWidgetItem(str(self.data.filelist[filename].Pro_Data1[i])))
+            self.Table3.setItem(0, i, QTableWidgetItem(str(format(self.data.filelist[filename].Pro_Data1[i], '.3f'))))
             self.Table3.item(0, i).setBackground(QBrush(QColor(240, 125, 80)))
 
         for i in range(len(self.data.filelist[self.Table2.item(index, 0).text()].Pro_mal1)):
             for j in range(len(self.data.filelist[self.Table2.item(index, 0).text()].Pro_mal1[i])):
                 self.Table3.setItem(j + 1, i, QTableWidgetItem(
-                    str(self.data.filelist[self.Table2.item(index, 0).text()].Pro_mal1[i][j])))
+                    str(format(self.data.filelist[self.Table2.item(index, 0).text()].Pro_mal1[i][j], '.3f'))))
 
         # self.Table3.setRowCount(1)
         # self.Table3.setColumnCount(self.Table2.columnCount())
@@ -884,10 +911,12 @@ class main(QMainWindow):
         row = []
         x = []
         for i in range(1, self.Table3.rowCount()):
-            row.append(int(self.Table3.item(i, index).text()))
+            row.append(float(self.Table3.item(i, index).text()))
         self.plotperspot(x, row, self.Table2V + "第" + str(index + 1) + "个数据点重复测试数值变化图")
         self.imagen4Name = self.Table2V + "第" + str(index + 1) + "个数据点重复测试数值变化图"
-        self.figure4.make_plot(row)
+        mean=np.mean(row)
+        std=np.std(row, ddof=1)
+        self.figure4.make_plot(row,labeltmp="Mean:"+str(round(mean,3))+", STD:"+str(round(std,3)))
 
     def Table3VerticalHeaderClick(self, index):
         print("Table3VerticalHeaderClick")
@@ -929,7 +958,7 @@ class main(QMainWindow):
                     self.Table4.setItem(p, 0, QTableWidgetItem(self.Table2V))
                     self.Table4.setItem(p, 1, QTableWidgetItem(str(temp.cutstartnumspot1)))
                     self.Table4.setItem(p, 2, QTableWidgetItem(str(temp.cutendnumspot1)))
-                    self.Table4.setItem(p, 3, QTableWidgetItem(str(round(temp.Max, 2))))
+                    self.Table4.setItem(p, 3, QTableWidgetItem(str(format(temp.Max, '.3f'))))
                     if temp.fitweightindex==1:
                         self.Table4.setItem(p, 4, QTableWidgetItem(str("1/y")))
                     elif temp.fitweightindex==2:
@@ -965,7 +994,7 @@ class main(QMainWindow):
                     self.Table5.setItem(p, 0, QTableWidgetItem(self.Table2V))
                     self.Table5.setItem(p, 1, QTableWidgetItem(str(temp.cutstartnumspot1)))
                     self.Table5.setItem(p, 2, QTableWidgetItem(str(temp.cutendnumspot1)))
-                    self.Table5.setItem(p, 3, QTableWidgetItem(str(round(temp.Max, 2))))
+                    self.Table5.setItem(p, 3, QTableWidgetItem(str(format(temp.Max, '.3f'))))
                     if temp.fitweightindex == 1:
                         self.Table5.setItem(p, 4, QTableWidgetItem(str("1/y")))
                     elif temp.fitweightindex == 2:
@@ -998,7 +1027,7 @@ class main(QMainWindow):
                     self.Table8.setItem(p, 0, QTableWidgetItem(self.Table2V))
                     self.Table8.setItem(p, 1, QTableWidgetItem(str(temp.cutstartnumspot1)))
                     self.Table8.setItem(p, 2, QTableWidgetItem(str(temp.cutendnumspot1)))
-                    self.Table8.setItem(p, 3, QTableWidgetItem(str(round(temp.Max, 2))))
+                    self.Table8.setItem(p, 3, QTableWidgetItem(str(format(temp.Max, '.3f'))))
                     if temp.fitweightindex==1:
                         self.Table8.setItem(p, 4, QTableWidgetItem(str("1/y")))
                     elif temp.fitweightindex==2:
@@ -1034,7 +1063,7 @@ class main(QMainWindow):
                     self.Table9.setItem(p, 0, QTableWidgetItem(self.Table2V))
                     self.Table9.setItem(p, 1, QTableWidgetItem(str(temp.cutstartnumspot1)))
                     self.Table9.setItem(p, 2, QTableWidgetItem(str(temp.cutendnumspot1)))
-                    self.Table9.setItem(p, 3, QTableWidgetItem(str(round(temp.Max, 2))))
+                    self.Table9.setItem(p, 3, QTableWidgetItem(str(format(temp.Max, '.3f'))))
                     if temp.fitweightindex == 1:
                         self.Table9.setItem(p, 4, QTableWidgetItem(str("1/y")))
                     elif temp.fitweightindex == 2:
@@ -1107,7 +1136,7 @@ class main(QMainWindow):
         # self.figure.axes.scatter(self.data.filelist[filename].Cut_Data1_X,self.data.filelist[filename].Cut_Data1, alpha=0.3)
         self.figure.axes.grid()
         self.figure.axes.set_ylabel("cps")
-        self.figure.axes.set_xlabel("t")
+        self.figure.axes.set_xlabel("t(ms)")
         self.figure.axes.set_title(title)
         self.imagen2Name = title
         self.figure.axes.legend()
@@ -1161,7 +1190,7 @@ class main(QMainWindow):
         # self.figure2.axes.scatter(self.data.filelist[filename].Cut_Data1_X,self.data.filelist[filename].Cut_Data1, alpha=0.3)
         self.figure2.axes.grid()
         self.figure2.axes.set_ylabel("cps")
-        self.figure2.axes.set_xlabel("t")
+        self.figure2.axes.set_xlabel("t(ms)")
         self.figure2.axes.set_title(title)
         self.imagen2Name = title
         self.figure2.axes.legend()
@@ -1215,9 +1244,9 @@ class main(QMainWindow):
         # self.figure.axes.scatter(self.data.filelist[filename].Cut_Data1_X,self.data.filelist[filename].Cut_Data1, alpha=0.3)
         self.figure6.axes.grid()
         self.figure6.axes.set_ylabel("cps")
-        self.figure6.axes.set_xlabel("t")
+        self.figure6.axes.set_xlabel("t(ms)")
         self.figure6.axes.set_title(title)
-        self.imagen2Name = title
+        self.imagen6Name = title
         self.figure6.axes.legend()
 
     def Table9VerticalHeaderClick(self, index):
@@ -1269,9 +1298,9 @@ class main(QMainWindow):
         # self.figure2.axes.scatter(self.data.filelist[filename].Cut_Data1_X,self.data.filelist[filename].Cut_Data1, alpha=0.3)
         self.figure7.axes.grid()
         self.figure7.axes.set_ylabel("cps")
-        self.figure7.axes.set_xlabel("t")
+        self.figure7.axes.set_xlabel("t(ms)")
         self.figure7.axes.set_title(title)
-        self.imagen2Name = title
+        self.imagen7Name = title
         self.figure7.axes.legend()
 
     def table7clicked(self,index:QModelIndex):
@@ -1304,6 +1333,7 @@ class main(QMainWindow):
             self.inLineEdit.blockSignals(False)
             # self.inpath = path
             self.outpath = path + "/预处理后的数据"
+            self.data.outpath = self.outpath
             self.outLineEdit.blockSignals(True)
             self.outLineEdit.setText(self.outpath)
             self.outLineEdit.blockSignals(False)
@@ -1457,6 +1487,29 @@ class main(QMainWindow):
             self.figure2.axes.get_figure().savefig(self.outpath + "/指数图片文件/" + self.imagen2Name + ".png")
             self.statusBar().showMessage(
                 "图片成功保存到" + self.outpath + "/指数图片文件/" + self.imagen2Name + ".png")
+        else:
+            self.statusBar().showMessage(
+                "无图片！")
+
+    def saveImage6Buttonlicked(self):
+        if (not os.path.exists(self.outpath + "/双曲线积分图片文件/")):
+            os.makedirs(self.outpath + "/双曲线积分图片文件/")
+
+        if (self.imagen6Name != ""):
+            self.figure6.axes.get_figure().savefig(self.outpath + "/双曲线积分图片文件/" + self.imagen6Name + ".png")
+            self.statusBar().showMessage(
+                "图片成功保存到" + self.outpath + "/双曲线积分图片文件/" + self.imagen6Name + ".png")
+        else:
+            self.statusBar().showMessage(
+                "无图片！")
+
+    def saveImage7Buttonlicked(self):
+        if (not os.path.exists(self.outpath + "/指数积分图片文件/")):
+            os.makedirs(self.outpath + "/指数积分图片文件/")
+        if (self.imagen7Name != ""):
+            self.figure7.axes.get_figure().savefig(self.outpath + "/指数积分图片文件/" + self.imagen7Name + ".png")
+            self.statusBar().showMessage(
+                "图片成功保存到" + self.outpath + "/指数积分图片文件/" + self.imagen7Name + ".png")
         else:
             self.statusBar().showMessage(
                 "无图片！")
@@ -1636,6 +1689,12 @@ class main(QMainWindow):
             item3 = menu.addAction('复制当前列(带列名)->[' + collabel + ']')
             item4 = menu.addAction('复制当前行->[' + rowlabel + ']')
             item5 = menu.addAction('复制当前列->[' + collabel + ']')
+            item6 = menu.addAction('复制x轴数据')
+            item7 = menu.addAction('复制原始数据')
+            item8 = menu.addAction('复制双曲拟合数据')
+            item9 = menu.addAction('复制指数拟合数据')
+            item10 = menu.addAction('复制双曲积分拟合数据')
+            item11 = menu.addAction('复制指数积分拟合数据')
             action = menu.exec_(self.Table2.mapToGlobal(pos))
             if action == item1:
                 clipboard = QApplication.clipboard()
@@ -1678,10 +1737,63 @@ class main(QMainWindow):
                     text += self.Table2.item(i, ind).text() + "\t"
                 clipboard.setText(text)
                 self.statusBar().showMessage("已提取每组参数中的" + collabel + "列特征")
+            elif action == item6:
+                clipboard = QApplication.clipboard()
+                text = ""
+                ind = self.Table2.currentIndex().column()
+                for i in range(len(self.data.filelist[self.data.filenames[ind]].Pro_Data1_X)):
+                    text += str(self.data.filelist[self.data.filenames[ind]].Pro_Data1_X[i]) + "\t"
+                clipboard.setText(text)
+                self.statusBar().showMessage("已复制"+self.Table2.item(self.Table2.currentIndex().row(), 0).text()+"文件的x轴数据")
+
+            elif action == item7:
+                clipboard = QApplication.clipboard()
+                text = ""
+                ind = self.Table2.currentIndex().column()
+                for i in range(len(self.data.filelist[self.data.filenames[ind]].Pro_Data1)):
+                    text += str(self.data.filelist[self.data.filenames[ind]].Pro_Data1[i]) + "\t"
+                clipboard.setText(text)
+                self.statusBar().showMessage("已复制"+self.Table2.item(self.Table2.currentIndex().row(), 0).text()+"文件的原始数据")
+
+            elif action == item8:
+                clipboard = QApplication.clipboard()
+                text = ""
+                ind = self.Table2.currentIndex().column()
+                for i in range(len(self.data.filelist[self.data.filenames[ind]].paras["双曲线拟合"][-1].yfit)):
+                    text += str(self.data.filelist[self.data.filenames[ind]].paras["双曲线拟合"][-1].yfit[i])+ "\t"
+                clipboard.setText(text)
+                self.statusBar().showMessage("已复制"+self.Table2.item(self.Table2.currentIndex().row(), 0).text()+"文件的双曲拟合数据")
+
+            elif action == item9:
+                clipboard = QApplication.clipboard()
+                text = ""
+                ind = self.Table2.currentIndex().column()
+                for i in range(len(self.data.filelist[self.data.filenames[ind]].paras["指数拟合"][-1].yfit)):
+                    text += str(self.data.filelist[self.data.filenames[ind]].paras["指数拟合"][-1].yfit[i])+ "\t"
+                clipboard.setText(text)
+                self.statusBar().showMessage("已复制"+self.Table2.item(self.Table2.currentIndex().row(), 0).text()+"文件的指数拟合数据")
+
+            elif action == item10:
+                clipboard = QApplication.clipboard()
+                text = ""
+                ind = self.Table2.currentIndex().column()
+                for i in range(len(self.data.filelist[self.data.filenames[ind]].paras["双曲线积分拟合"][-1].yfit)):
+                    text += str(self.data.filelist[self.data.filenames[ind]].paras["双曲线积分拟合"][-1].yfit[i]) + "\t"
+                clipboard.setText(text)
+                self.statusBar().showMessage("已复制"+self.Table2.item(self.Table2.currentIndex().row(), 0).text()+"文件的双曲积分拟合数据")
+
+            elif action == item11:
+                clipboard = QApplication.clipboard()
+                text = ""
+                ind = self.Table2.currentIndex().column()
+                for i in range(len(self.data.filelist[self.data.filenames[ind]].paras["指数积分拟合"][-1].yfit)):
+                    text += str(self.data.filelist[self.data.filenames[ind]].paras["指数积分拟合"][-1].yfit[i]) + "\t"
+                clipboard.setText(text)
+                self.statusBar().showMessage("已复制"+self.Table2.item(self.Table2.currentIndex().row(), 0).text()+"文件的指数积分拟合数据")
             else:
                 return
 
-    def plotfeature(self, x, ys, title=[], xlabel="t", ylabel="cps"):
+    def plotfeature(self, x, ys, title=[], xlabel="t(ms)", ylabel="cps"):
         # print("plotfeature")
         # xtamp=[]    #时间戳
         # for temp in x:
@@ -1705,7 +1817,7 @@ class main(QMainWindow):
 
         # print(ydicts)
 
-        self.FigtabWidget.setCurrentIndex(2)
+        self.FigtabWidget.setCurrentIndex(4)
         titleall = "所选数据文件"
         for t in title:
             titleall += "第[" + t + "]列"
@@ -1721,8 +1833,8 @@ class main(QMainWindow):
             datacell = ydicts[i]
             # print("datacell", datacell)
             # print(title[i])
-            self.figure3.axes.plot(datacell[0], datacell[1], label=title[i])
-            self.figure3.axes.scatter(datacell[0], datacell[1], label=title[i], alpha=0.5)
+            self.figure3.axes.plot(datacell[0], datacell[1], label=title[i],marker="o", markeredgecolor=(0,0,1, 0.3), markerfacecolor="none",)
+            # self.figure3.axes.scatter(datacell[0], datacell[1], label=title[i], alpha=0.5)
 
         # for i in range(len(ys)):
         #     print(title[i])
@@ -1739,7 +1851,7 @@ class main(QMainWindow):
         self.figure3.axes.grid()
         self.figure3.axes.legend()
 
-    def plotperspot(self, x, y, title="", xlabel="t", ylabel="cps"):
+    def plotperspot(self, x, y, title="", xlabel="t(ms)", ylabel="cps"):
         print("plotperspot")
         # self.FigtabWidget.setCurrentIndex(2)
         if (x == []):
@@ -1748,8 +1860,8 @@ class main(QMainWindow):
         # print(y)
         self.figure3.fig.canvas.draw_idle()
         self.figure3.axes.clear()
-        self.figure3.axes.plot(x, y, color="blue")
-        self.figure3.axes.scatter(x, y, color="blue", alpha=0.5)
+        self.figure3.axes.plot(x, y,marker="o", markeredgecolor=(0,0,1, 0.3), markerfacecolor="none",)
+        # self.figure3.axes.scatter(x, y, color="blue", alpha=0.5)
         # pg = sns.distplot(y)
         # self.figure3.axes=pg.fig
         # self.figure3.draw()
@@ -1763,7 +1875,7 @@ class main(QMainWindow):
         self.figure3.axes.grid()
         self.figure3.axes.legend()
 
-    def plotdata(self, filenames, title="", num=-1, xlabel="t", ylabel="cps"):
+    def plotdata(self, filenames, title="", num=-1, xlabel="t(ms)", ylabel="cps"):
         print("plotdata")
 
         self.figure.fig.canvas.draw_idle()
@@ -1828,114 +1940,204 @@ class main(QMainWindow):
                 numstart4 = 0
                 numend4 = len(self.data.filelist[filename].Pro_Data1) - 1
                 numendspot4 = 0
-
-            # 原始曲线中段折线
-            self.figure.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart1:numend1 + 1],
-                                  self.data.filelist[filename].Pro_Data1[numstart1:numend1 + 1],
+            self.figure.axes.errorbar(self.data.filelist[filename].Pro_Data1_X[numstart1:numend1 + 1],
+                                  self.data.filelist[filename].Pro_Data1[numstart1:numend1 + 1],elinewidth=0.2,
+                                      yerr=[self.data.filelist[filename].mal1MES[i] * self.data.filelist[
+                                          filename].Count_Num_per_gate * 1000 / self.data.filelist[filename].Gate_Time
+                                            for i in range(len(self.data.filelist[filename].mal1MES))],
+                                  marker="o", markeredgecolor=(0, 0, 1, 0.3), markerfacecolor="none",
                                   label=filename + "文件前截" + str(numstart1) + "个点后截" + str(
-                                      numendspot1) + "个点双曲线拟合图")  # 中段
-            self.figure2.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
-                                   self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1],
+                                      numendspot1) + "个点原始数据",zorder=1)  # 中段
+
+            self.figure2.axes.errorbar(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
+                                   self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1],elinewidth=0.2,
+                                                                              yerr=[self.data.filelist[filename].mal1MES[i] * self.data.filelist[
+                                           filename].Count_Num_per_gate * 1000 / self.data.filelist[filename].Gate_Time
+                                             for i in range(len(self.data.filelist[filename].mal1MES))],
+                                   marker="o", markeredgecolor=(0, 0, 1, 0.3), markerfacecolor="none",
                                    label=filename + "文件前截" + str(numstart1) + "个点后截" + str(
-                                       numendspot2) + "个点双曲线拟合图")  # 中段
+                                       numendspot2) + "个点原始数据",zorder=1)  # 中段
 
-            if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
-                self.figure6.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[numstart3:numend3 + 1],
-                                      self.data.filelist[filename].Pro_Data1[numstart3:numend3 + 1],
-                                      label=filename + "文件前截" + str(numstart3) + "个点后截" + str(
-                                          numendspot3) + "个点双曲线积分拟合图")  # 中段
+            self.figure6.axes.errorbar(self.data.filelist[filename].Pro_Data1_X[numstart3:numend3 + 1],
+                                   self.data.filelist[filename].Pro_Data1[numstart3:numend3 + 1],elinewidth=0.2,
+                                       yerr=[self.data.filelist[filename].mal1MES[i] * self.data.filelist[
+                                           filename].Count_Num_per_gate * 1000 / self.data.filelist[filename].Gate_Time
+                                             for i in range(len(self.data.filelist[filename].mal1MES))],
+                                   marker="o", markeredgecolor=(0, 0, 1, 0.3), markerfacecolor="none",
+                                   label=filename + "文件前截" + str(numstart3) + "个点后截" + str(
+                                       numendspot3) + "个点原始数据",zorder=1)  # 中段
 
-            if (self.data.filelist[filename].paras["指数积分拟合"] != []):
-                self.figure7.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[numstart4:numend4 + 1],
-                                       self.data.filelist[filename].Pro_Data1[numstart4:numend4 + 1],
-                                       label=filename + "文件前截" + str(numstart4) + "个点后截" + str(
-                                           numendspot4) + "个点指数积分拟合图")  # 中段
+            self.figure7.axes.errorbar(self.data.filelist[filename].Pro_Data1_X[numstart4:numend4 + 1],
+                                   self.data.filelist[filename].Pro_Data1[numstart4:numend4 + 1],elinewidth=0.2,
+                                       yerr=[self.data.filelist[filename].mal1MES[i] * self.data.filelist[
+                                           filename].Count_Num_per_gate * 1000 / self.data.filelist[filename].Gate_Time
+                                             for i in range(len(self.data.filelist[filename].mal1MES))],
+                                   marker="o", markeredgecolor=(0, 0, 1, 0.3), markerfacecolor="none",
+                                   label=filename + "文件前截" + str(numstart4) + "个点后截" + str(
+                                       numendspot4) + "个点原始数据",zorder=1)  # 中段
 
-            self.figure5.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
-                                   self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1],
-                                   label=filename + "文件前截" + str(numstart1) + "个点后截" + str(numendspot1) + "原始曲线")  # 中段
+            self.figure5.axes.errorbar(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
+                                   self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1],elinewidth=0.2,
+                                       yerr=[self.data.filelist[filename].mal1MES[i] * self.data.filelist[
+                                           filename].Count_Num_per_gate * 1000 / self.data.filelist[filename].Gate_Time
+                                             for i in range(len(self.data.filelist[filename].mal1MES))],
+                                   marker="o", markeredgecolor=(0, 0, 1, 0.3), markerfacecolor="none",
+                                   label=filename + "文件前截" + str(numstart1) + "个点后截" + str(numendspot1) + "原始曲线",zorder=1)  # 中段
+            # # 原始曲线中段折线
+            # self.figure.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart1:numend1 + 1],
+            #                       self.data.filelist[filename].Pro_Data1[numstart1:numend1 + 1],
+            #                       marker="o",markeredgecolor=(0,0,1, 0.3), markerfacecolor="none",
+            #                       label=filename + "文件前截" + str(numstart1) + "个点后截" + str(
+            #                           numendspot1) + "个点原始数据")  # 中段
+            #
+            #
+            #
+            # self.figure2.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
+            #                        self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1],
+            #                        marker="o", markeredgecolor=(0,0,1, 0.3), markerfacecolor="none",
+            #                        label=filename + "文件前截" + str(numstart1) + "个点后截" + str(
+            #                            numendspot2) + "个点原始数据")  # 中段
+            #
+            # self.figure6.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart3:numend3 + 1],
+            #                       self.data.filelist[filename].Pro_Data1[numstart3:numend3 + 1],
+            #                       marker="o", markeredgecolor=(0,0,1, 0.3), markerfacecolor="none",
+            #                       label=filename + "文件前截" + str(numstart3) + "个点后截" + str(
+            #                           numendspot3) + "个点原始数据")  # 中段
+            #
+            # self.figure7.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart4:numend4 + 1],
+            #                        self.data.filelist[filename].Pro_Data1[numstart4:numend4 + 1],
+            #                        marker="o", markeredgecolor=(0,0,1, 0.3), markerfacecolor="none",
+            #                        label=filename + "文件前截" + str(numstart4) + "个点后截" + str(
+            #                            numendspot4) + "个点原始数据")  # 中段
+            #
+            # self.figure5.axes.plot(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
+            #                        self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1],
+            #                        marker="o", markeredgecolor=(0,0,1, 0.3), markerfacecolor="none",
+            #                        label=filename + "文件前截" + str(numstart1) + "个点后截" + str(numendspot1) + "原始曲线")  # 中段
+
+            # 原始曲线中段折线中段散点
+            # self.figure.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart1:numend1 + 1],
+            #                          self.data.filelist[filename].Pro_Data1[numstart1:numend1 + 1], alpha=0.3)
+            #
+            # self.figure2.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
+            #                           self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], alpha=0.3)
+            #
+            # self.figure6.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart3:numend3 + 1],
+            #                               self.data.filelist[filename].Pro_Data1[numstart3:numend3 + 1], alpha=0.3)
+            #
+            # self.figure7.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart4:numend4 + 1],
+            #                               self.data.filelist[filename].Pro_Data1[numstart4:numend4 + 1], alpha=0.3)
+            #
+            # self.figure5.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
+            #                           self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], color=(1, 1, 0,0.3))
+            #
 
             #显示裁剪状态下 前段，后段的折线和散点
             if (self.showcut == 0):
                 #折线
                 self.figure.axes.plot(self.data.filelist[filename].Pro_Data1_X[0:numstart1 + 1],
-                                      self.data.filelist[filename].Pro_Data1[0:numstart1 + 1], "--")  # 前半段
+                                      self.data.filelist[filename].Pro_Data1[0:numstart1 + 1], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0,0.3),zorder=0)  # 前半段
                 self.figure.axes.plot(self.data.filelist[filename].Pro_Data1_X[numend1:],
-                                      self.data.filelist[filename].Pro_Data1[numend1:], "--", color="green")  # 后半段段
+                                      self.data.filelist[filename].Pro_Data1[numend1:], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0,0.3),zorder=0)  # 后半段段
 
                 self.figure2.axes.plot(self.data.filelist[filename].Pro_Data1_X[0:numstart2 + 1],
-                                       self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], "--")  # 前半段
+                                       self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0,0.3),zorder=0)  # 前半段
                 self.figure2.axes.plot(self.data.filelist[filename].Pro_Data1_X[numend2:],
-                                       self.data.filelist[filename].Pro_Data1[numend2:], "--")  # 后半段段
-                if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
-                    self.figure6.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[0:numstart3 + 1],
-                                           self.data.filelist[filename].Pro_Data1[0:numstart3 + 1], "--")  # 前半段
+                                       self.data.filelist[filename].Pro_Data1[numend2:], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0,0.3),zorder=0)  # 后半段段
 
-                    self.figure6.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[numend3:],
-                                           self.data.filelist[filename].Pro_Data1[numend3:], "--")  # 后半段段
+                self.figure6.axes.plot(self.data.filelist[filename].Pro_Data1_X[0:numstart3 + 1],
+                                       self.data.filelist[filename].Pro_Data1[0:numstart3 + 1], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0,0.3),zorder=0)  # 前半段
 
-                if (self.data.filelist[filename].paras["指数积分拟合"] != []):
-                    self.figure7.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[0:numstart4 + 1],
-                                           self.data.filelist[filename].Pro_Data1[0:numstart4 + 1], "--")  # 前半段
-                    self.figure7.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[numend4:],
-                                           self.data.filelist[filename].Pro_Data1[numend4:], "--")  # 后半段段
-
-                self.figure5.axes.plot(self.data.filelist[filename].Pro_Data1_X[0:numstart2 + 1],
-                                       self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], "--")  # 前半段
-                self.figure5.axes.plot(self.data.filelist[filename].Pro_Data1_X[numend2:],
-                                       self.data.filelist[filename].Pro_Data1[numend2:], "--")  # 后半段段
-
-                #散点
-                self.figure.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart1 + 1],
-                                         self.data.filelist[filename].Pro_Data1[0:numstart1 + 1], alpha=0.3)  # 前半段
-                self.figure.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend1:],
-                                         self.data.filelist[filename].Pro_Data1[numend1:], alpha=0.3)  # 后半段段
+                self.figure6.axes.plot(self.data.filelist[filename].Pro_Data1_X[numend3:],
+                                       self.data.filelist[filename].Pro_Data1[numend3:], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0,0.3),zorder=0)  # 后半段段
 
 
-                self.figure2.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart2 + 1],
-                                          self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], alpha=0.3)  # 前半段
-                self.figure2.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend2:],
-                                          self.data.filelist[filename].Pro_Data1[numend2:], alpha=0.3)  # 后半段段
-
-                if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
-                    self.figure6.axes.scatter(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[0:numstart3 + 1],
-                                             self.data.filelist[filename].Pro_Data1[0:numstart3 + 1], alpha=0.3)  # 前半段
-                    self.figure6.axes.scatter(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[numend3:],
-                                             self.data.filelist[filename].Pro_Data1[numend3:], alpha=0.3)  # 后半段段
-
-                if (self.data.filelist[filename].paras["指数积分拟合"] != []):
-                    self.figure7.axes.scatter(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[0:numstart4 + 1],
-                                              self.data.filelist[filename].Pro_Data1[0:numstart4 + 1], alpha=0.3)  # 前半段
-                    self.figure7.axes.scatter(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[numend4:],
-                                              self.data.filelist[filename].Pro_Data1[numend4:], alpha=0.3)  # 后半段段
+                self.figure7.axes.plot(self.data.filelist[filename].Pro_Data1_X[0:numstart4 + 1],
+                                       self.data.filelist[filename].Pro_Data1[0:numstart4 + 1], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0,0.3),zorder=0)  # 前半段
+                self.figure7.axes.plot(self.data.filelist[filename].Pro_Data1_X[numend4:],
+                                       self.data.filelist[filename].Pro_Data1[numend4:], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0.14,0.3),zorder=0)  # 后半段段
 
 
+                self.figure5.axes.plot(self.data.filelist[filename].Pro_Data1_X[0:numstart1 + 1],
+                                       self.data.filelist[filename].Pro_Data1[0:numstart1 + 1], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0,0.3))  # 前半段
+                self.figure5.axes.plot(self.data.filelist[filename].Pro_Data1_X[numend1:],
+                                       self.data.filelist[filename].Pro_Data1[numend1:], "--", color="green",marker="o", markerfacecolor="none",markeredgecolor=(0,0.5,0,0.3))  # 后半段段
 
-                self.figure5.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart2 + 1],
-                                          self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], alpha=0.3)  # 前半段
-                self.figure5.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend2:],
-                                          self.data.filelist[filename].Pro_Data1[numend2:], alpha=0.3)  # 后半段段
+                # #散点
+                # self.figure.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart1 + 1],
+                #                          self.data.filelist[filename].Pro_Data1[0:numstart1 + 1], alpha=0.3, color="green")  # 前半段
+                # self.figure.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend1:],
+                #                          self.data.filelist[filename].Pro_Data1[numend1:], alpha=0.3, color="green")  # 后半段段
+                #
+                #
+                # self.figure2.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart2 + 1],
+                #                           self.data.filelist[filename].Pro_Data1[0:numstart2 + 1], alpha=0.3, color="green")  # 前半段
+                # self.figure2.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend2:],
+                #                           self.data.filelist[filename].Pro_Data1[numend2:], alpha=0.3, color="green")  # 后半段段
+                #
+                # self.figure6.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart3 + 1],
+                #                          self.data.filelist[filename].Pro_Data1[0:numstart3 + 1], alpha=0.3, color="green")  # 前半段
+                # self.figure6.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend3:],
+                #                          self.data.filelist[filename].Pro_Data1[numend3:], alpha=0.3, color="green")  # 后半段段
+                #
+                # self.figure7.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart4 + 1],
+                #                           self.data.filelist[filename].Pro_Data1[0:numstart4 + 1], alpha=0.3, color="green")  # 前半段
+                # self.figure7.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend4:],
+                #                           self.data.filelist[filename].Pro_Data1[numend4:], alpha=0.3, color="green")  # 后半段段
+                #
+                #
+                #
+                # self.figure5.axes.scatter(self.data.filelist[filename].Pro_Data1_X[0:numstart1 + 1],
+                #                           self.data.filelist[filename].Pro_Data1[0:numstart1 + 1], alpha=0.3, color="green")  # 前半段
+                # self.figure5.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numend1:],
+                #                           self.data.filelist[filename].Pro_Data1[numend1:], alpha=0.3, color="green")  # 后半段段
 
-            # 原始散点
-            self.figure.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart1:numend1 + 1],
-                                     self.data.filelist[filename].Pro_Data1[numstart1:numend1 + 1], alpha=0.3)
 
-            self.figure2.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
-                                      self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], alpha=0.3)
-            if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
-                self.figure6.axes.scatter(self.data.filelist[filename].paras["双曲线积分拟合"][num].xfit[numstart2:numend2 + 1],
-                                          self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], alpha=0.3)
-            if (self.data.filelist[filename].paras["指数积分拟合"] != []):
-                self.figure7.axes.scatter(self.data.filelist[filename].paras["指数积分拟合"][num].xfit[numstart2:numend2 + 1],
-                                          self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], alpha=0.3)
+            # #原始数据方差
+            # datay1addMES=[self.data.filelist[filename].Pro_Data1[i]-self.data.filelist[filename].mal1MES[i]*self.data.filelist[filename].Count_Num_per_gate * 1000 / self.data.filelist[filename].Gate_Time for i in range(len(self.data.filelist[filename].Pro_Data1))]
+            # datay1reduceMES=[self.data.filelist[filename].Pro_Data1[i]+self.data.filelist[filename].mal1MES[i]*self.data.filelist[filename].Count_Num_per_gate * 1000 / self.data.filelist[filename].Gate_Time for i in range(len(self.data.filelist[filename].Pro_Data1))]
+            # # self.figure.axes.errorbar(self.data.filelist[filename].Pro_Data1_X, self.data.filelist[filename].Pro_Data1, fmt="bo:", yerr=[self.data.filelist[filename].mal1MES[i]*self.data.filelist[filename].Count_Num_per_gate * 1000 / self.data.filelist[filename].Gate_Time for i in range(len(self.data.filelist[filename].mal1MES))] )
+            # self.figure.axes.fill_between(self.data.filelist[filename].Pro_Data1_X,
+            #                                datay1addMES,
+            #                                datay1reduceMES,
+            #                                facecolor='r', alpha=0.5, interpolate=True)
+            #
+            # self.figure2.axes.fill_between(self.data.filelist[filename].Pro_Data1_X,
+            #                                datay1addMES,
+            #                                datay1reduceMES,
+            #                                facecolor='r', alpha=0.5, interpolate=True)
+            # self.figure3.axes.fill_between(self.data.filelist[filename].Pro_Data1_X,
+            #                                datay1addMES,
+            #                                datay1reduceMES,
+            #                                facecolor='r', alpha=0.5, interpolate=True)
+            # self.figure6.axes.fill_between(self.data.filelist[filename].Pro_Data1_X,
+            #                                datay1addMES,
+            #                                datay1reduceMES,
+            #                                facecolor='r', alpha=0.5, interpolate=True)
+            # self.figure7.axes.fill_between(self.data.filelist[filename].Pro_Data1_X,
+            #                                datay1addMES,
+            #                                datay1reduceMES,
+            #                                facecolor='r', alpha=0.5, interpolate=True)
+            # self.figure5.axes.fill_between(self.data.filelist[filename].Pro_Data1_X,
+            #                                datay1addMES,
+            #                                datay1reduceMES,
+            #                                facecolor='r', alpha=0.5, interpolate=True)
 
-            self.figure5.axes.scatter(self.data.filelist[filename].Pro_Data1_X[numstart2:numend2 + 1],
-                                      self.data.filelist[filename].Pro_Data1[numstart2:numend2 + 1], alpha=0.3)
 
             #拟合曲线
             if (self.data.filelist[filename].paras["双曲线拟合"] != []):
                 self.figure.axes.plot(self.data.filelist[filename].paras["双曲线拟合"][num].fitx,
-                                      self.data.filelist[filename].paras["双曲线拟合"][num].fity, color="red")
+                                      self.data.filelist[filename].paras["双曲线拟合"][num].fity, color="red",
+                                       label="双曲线拟合，参数(I0:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线拟合"][num].para[0],
+                                                 2)) + ",τ:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线拟合"][num].para[1],
+                                                 5)) + ",Γ:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线拟合"][num].para[2],
+                                                 5)) + ",D:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线拟合"][num].para[3],
+                                                 2)) + ",R2:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线拟合"][num].R2[0], 5)) + ")",zorder=2)
                 self.figure5.axes.plot(self.data.filelist[filename].paras["双曲线拟合"][num].fitx,
                                        self.data.filelist[filename].paras["双曲线拟合"][num].fity, color="red",
                                        label="双曲线拟合，参数(I0:" + str(
@@ -1947,11 +2149,19 @@ class main(QMainWindow):
                                                  5)) + ",D:" + str(
                                            round(self.data.filelist[filename].paras["双曲线拟合"][num].para[3],
                                                  2)) + ",R2:" + str(
-                                           round(self.data.filelist[filename].paras["双曲线拟合"][num].R2[0], 5)) + ")")
+                                           round(self.data.filelist[filename].paras["双曲线拟合"][num].R2[0], 5)) + ")",zorder=2)
 
             if (self.data.filelist[filename].paras["指数拟合"] != []):
                 self.figure2.axes.plot(self.data.filelist[filename].paras["指数拟合"][num].fitx,
-                                       self.data.filelist[filename].paras["指数拟合"][num].fity, color="red")
+                                       self.data.filelist[filename].paras["指数拟合"][num].fity, color="red",
+                                       label="指数拟合，参数(I0:" + str(
+                                           round(self.data.filelist[filename].paras["指数拟合"][num].para[0],
+                                                 2)) + ",τ:" + str(
+                                           round(self.data.filelist[filename].paras["指数拟合"][num].para[1],
+                                                 5)) + ",D:" + str(
+                                           round(self.data.filelist[filename].paras["指数拟合"][num].para[2],
+                                                 2)) + ",R2:" + str(
+                                           round(self.data.filelist[filename].paras["指数拟合"][num].R2[0], 5)) + ")",zorder=2)
                 self.figure5.axes.plot(self.data.filelist[filename].paras["指数拟合"][num].fitx,
                                        self.data.filelist[filename].paras["指数拟合"][num].fity, "--", color="green",
                                        label="指数拟合，参数(I0:" + str(
@@ -1961,11 +2171,21 @@ class main(QMainWindow):
                                                  5)) + ",D:" + str(
                                            round(self.data.filelist[filename].paras["指数拟合"][num].para[2],
                                                  2)) + ",R2:" + str(
-                                           round(self.data.filelist[filename].paras["指数拟合"][num].R2[0], 5)) + ")")
+                                           round(self.data.filelist[filename].paras["指数拟合"][num].R2[0], 5)) + ")",zorder=2)
 
             if (self.data.filelist[filename].paras["双曲线积分拟合"] != []):
                 self.figure6.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].fitx,
-                                      self.data.filelist[filename].paras["双曲线积分拟合"][num].fity, color="red")
+                                      self.data.filelist[filename].paras["双曲线积分拟合"][num].fity, color="red",
+                                       label="双曲线积分拟合，参数(I0:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].para[0],
+                                                 2)) + ",τ:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].para[1],
+                                                 5)) + ",Γ:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].para[2],
+                                                 5)) + ",D:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].para[3],
+                                                 2)) + ",R2:" + str(
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].R2[0], 5)) + ")",zorder=2)
                 self.figure5.axes.plot(self.data.filelist[filename].paras["双曲线积分拟合"][num].fitx,
                                        self.data.filelist[filename].paras["双曲线积分拟合"][num].fity,':', color="yellow",
                                        label="双曲线积分拟合，参数(I0:" + str(
@@ -1977,11 +2197,19 @@ class main(QMainWindow):
                                                  5)) + ",D:" + str(
                                            round(self.data.filelist[filename].paras["双曲线积分拟合"][num].para[3],
                                                  2)) + ",R2:" + str(
-                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].R2[0], 5)) + ")")
+                                           round(self.data.filelist[filename].paras["双曲线积分拟合"][num].R2[0], 5)) + ")",zorder=2)
 
             if (self.data.filelist[filename].paras["指数积分拟合"] != []):
                 self.figure7.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].fitx,
-                                       self.data.filelist[filename].paras["指数积分拟合"][num].fity, color="red")
+                                       self.data.filelist[filename].paras["指数积分拟合"][num].fity, color="red",
+                                       label="指数积分拟合，参数(I0:" + str(
+                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].para[0],
+                                                 2)) + ",τ:" + str(
+                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].para[1],
+                                                 5)) + ",D:" + str(
+                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].para[2],
+                                                 2)) + ",R2:" + str(
+                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].R2[0], 5)) + ")",zorder=2)
                 self.figure5.axes.plot(self.data.filelist[filename].paras["指数积分拟合"][num].fitx,
                                        self.data.filelist[filename].paras["指数积分拟合"][num].fity,'-.', color="orange",
                                        label="指数积分拟合，参数(I0:" + str(
@@ -1991,7 +2219,7 @@ class main(QMainWindow):
                                                  5)) + ",D:" + str(
                                            round(self.data.filelist[filename].paras["指数积分拟合"][num].para[2],
                                                  2)) + ",R2:" + str(
-                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].R2[0], 5)) + ")")
+                                           round(self.data.filelist[filename].paras["指数积分拟合"][num].R2[0], 5)) + ")",zorder=2)
 
 
 
@@ -2095,6 +2323,15 @@ class main(QMainWindow):
                     self.data.filelist[filenames[0]].paras["指数拟合"][num].cutendnum1) + "双曲线拟合对比图"
         else:
             self.imagen5Name = filetext3
+
+    def showcolindexchanged(self,indexlist:list):
+        print(indexlist)
+        cols = 40
+        for i in range(cols):
+            if(i in indexlist):
+                self.Table2.showColumn(i)
+            else:
+                self.Table2.hideColumn(i)
 
     # 拟合上下限
     def b11lowchange(self, text):
@@ -2230,8 +2467,8 @@ class main(QMainWindow):
             self.Table2.setItem(i, 0, QTableWidgetItem(key))
             self.Table2.setItem(i, 1,
                                 QTableWidgetItem(self.data.filelist[key].ACQ_Time.strftime('%Y-%m-%d  %H:%M:%S.%f')))
-            self.Table2.setItem(i, 2, QTableWidgetItem(str(self.data.filelist[key].Max)))
-            self.Table2.setItem(i, 3, QTableWidgetItem(str(self.data.filelist[key].Min)))
+            self.Table2.setItem(i, 2, QTableWidgetItem(str(format(self.data.filelist[key].Max, '.3f'))))
+            self.Table2.setItem(i, 3, QTableWidgetItem(str(format(self.data.filelist[key].Min, '.3f'))))
             self.Table2.setItem(i, 4, QTableWidgetItem(str(len(self.data.filelist[key].Pro_Data1))))
 
             self.Table6.setItem(i, 0, QTableWidgetItem(key))
@@ -2269,7 +2506,7 @@ class main(QMainWindow):
         for key, value in self.data.filelist.items():
             row = []
             if (value.paras["双曲线拟合"] != []):
-                row.append(value.paras["双曲线拟合"][-1].Max)
+                row.append(format(value.paras["双曲线拟合"][-1].Max, '.3f'))
 
                 if value.paras["双曲线拟合"][-1].fitweightindex == 1:
                     row.append(str("1/y"))
@@ -2296,7 +2533,7 @@ class main(QMainWindow):
                 row.append("")
 
             if (value.paras["指数拟合"] != []):
-                row.append(value.paras["指数拟合"][-1].Max)
+                row.append(format(value.paras["指数拟合"][-1].Max, '.3f'))
                 if value.paras["指数拟合"][-1].fitweightindex == 1:
                     row.append(str("1/y"))
                 elif value.paras["指数拟合"][-1].fitweightindex == 2:
@@ -2319,7 +2556,7 @@ class main(QMainWindow):
                 row.append("")
 
             if (value.paras["双曲线积分拟合"] != []):
-                row.append(value.paras["双曲线积分拟合"][-1].Max)
+                row.append(format(value.paras["双曲线积分拟合"][-1].Max, '.3f'))
 
                 if value.paras["双曲线积分拟合"][-1].fitweightindex == 1:
                     row.append(str("1/y"))
@@ -2347,7 +2584,7 @@ class main(QMainWindow):
                 row.append("")
 
             if (value.paras["指数积分拟合"] != []):
-                row.append(value.paras["指数积分拟合"][-1].Max)
+                row.append(format(value.paras["指数积分拟合"][-1].Max, '.3f'))
                 if value.paras["指数积分拟合"][-1].fitweightindex == 1:
                     row.append(str("1/y"))
                 elif value.paras["指数积分拟合"][-1].fitweightindex == 2:
@@ -2373,7 +2610,7 @@ class main(QMainWindow):
 
             self.Table2.setItem(i, 0, QTableWidgetItem(key))
             self.Table2.setItem(i, 1, QTableWidgetItem(value.ACQ_Time.strftime('%Y-%m-%d  %H:%M:%S.%f')))
-            self.Table2.setItem(i, 2, QTableWidgetItem(str(value.Max)))
+            self.Table2.setItem(i, 2, QTableWidgetItem(str(format(value.Max, '.3f'))))
             self.Table2.setItem(i, 3, QTableWidgetItem(str(len(value.Pro_Data1))))
             j = 4
             for para in row:

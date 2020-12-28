@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib; matplotlib.use('TkAgg')
-
+plt.rc('font',family='Times New Roman')
 class OOMFormatter(matplotlib.ticker.ScalarFormatter):
     def __init__(self, order=0, fformat="%1.1f", offset=True, mathText=True):
         self.oom = order
@@ -16,7 +16,7 @@ class OOMFormatter(matplotlib.ticker.ScalarFormatter):
 
 
 class main():
-
+    fsize=25
     data1=[]
     for line in open("D:/工作文件2/延迟数据/发光与时辰-B.txt").readlines():
         linenew = line.strip()
@@ -44,7 +44,7 @@ class main():
 
 
     x=[i*0.1 for i in range(200)]
-    matplotlib.rcParams.update({'font.size': 13})
+    matplotlib.rcParams.update({'font.size': 15})
 
 
 
@@ -65,10 +65,11 @@ class main():
     # plt.xlabel("Delay time(ms)", fontproperties=my_font, fontsize=18)  # 设置x坐标标注，字体为18号
     # plt.ylabel("Photon intensity(CPS)", fontproperties=my_font, fontsize=18)  # 设置y坐标标注
     # plt.title("10点到12点每分钟温度变化图", fontproperties=my_font, fontsize=24)  # 设置标题
-    plt.title("(a)",fontsize=18)  # 设置标题
+    plt.tick_params(labelsize=18)
+    plt.title("(a)",fontsize=fsize)  # 设置标题
     # plt.title("(a)",fontsize=24,loc="right")  # 设置标题
-    plt.xlabel("Delay time(ms)", fontsize=18)  # 设置x坐标标注，字体为18号
-    plt.ylabel("Photon intensity(CPS)", fontsize=18)  # 设置y坐标标注
+    plt.xlabel("Delay time(ms)", fontsize=fsize)  # 设置x坐标标注，字体为18号
+    plt.ylabel("Photon intensity(CPS)", fontsize=fsize)  # 设置y坐标标注
     plt.ticklabel_format(style='plain', axis='y')
     # plt.legend()
     # plt.grid(alpha=0.4)  # 添加网格，alpha = 0.4透明度
@@ -86,10 +87,11 @@ class main():
     # plt.xlabel("Delay time(ms)", fontproperties=my_font, fontsize=18)  # 设置x坐标标注，字体为18号
     # plt.ylabel("Photon intensity(CPS)", fontproperties=my_font, fontsize=18)  # 设置y坐标标注
     # plt.title("10点到12点每分钟温度变化图", fontproperties=my_font, fontsize=24)  # 设置标题
-    plt.title("(b)", fontsize=18)  # 设置标题
+    plt.tick_params(labelsize=18)
+    plt.title("(b)", fontsize=fsize)  # 设置标题
     # plt.title("(b)", fontsize=24,loc="right")  # 设置标题
-    plt.xlabel("Delay time(ms)", fontsize=18)  # 设置x坐标标注，字体为18号
-    plt.ylabel("Photon intensity(CPS)", fontsize=18)  # 设置y坐标标注
+    plt.xlabel("Delay time(ms)", fontsize=fsize)  # 设置x坐标标注，字体为18号
+    plt.ylabel("Photon intensity(CPS)", fontsize=fsize)  # 设置y坐标标注
     plt.ticklabel_format(style='plain', axis='y')
     plt.legend()
     # handles, labels = ax2.get_legend_handles_labels()
@@ -101,7 +103,7 @@ class main():
     ax1.ticklabel_format(axis='y', style='sci', scilimits=(-4, -4))
     ax2.yaxis.set_major_formatter(OOMFormatter(4, "%1.1f"))
     ax2.ticklabel_format(axis='y', style='sci', scilimits=(-4, -4))
-    plt.savefig('image.png', dpi =600, bbox_inches = 'tight')
+    plt.savefig('image2.png', dpi =600, bbox_inches = 'tight')
     # plt.axis('off')
     # plt.gcf().set_size_inches(512 / 100, 512 / 100)
     # plt.gca().xaxis.set_major_locator(plt.NullLocator())
